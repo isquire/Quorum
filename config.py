@@ -40,9 +40,19 @@ class DevConfig(BaseConfig):
     )
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
 class ProdConfig(BaseConfig):
     DEBUG = False
-    SESSION_COOKIE_SECURE = True
+    # Default to False so plain-HTTP LAN deployments (e.g. Raspberry Pi on
+    # the local network) work out of the box. Set SESSION_COOKIE_SECURE=true
+    # in .env when you put Quorum behind HTTPS.
+    SESSION_COOKIE_SECURE = _env_bool("SESSION_COOKIE_SECURE", False)
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL", "sqlite:////app/instance/quorum.db"
     )
