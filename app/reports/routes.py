@@ -1,9 +1,10 @@
-from flask import abort, flash, redirect, render_template, url_for
+from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from ..admin_log import log_admin_action
 from ..extensions import db
 from ..models import Meeting, Report, ReportType, Role
-from ..permissions import role_required
+from ..permissions import admin_required, role_required
 from ..utils import now_eastern
 from . import bp
 from .forms import ReportForm
@@ -19,8 +20,24 @@ def _populate_meeting_choices(form: ReportForm) -> None:
 @bp.route("/")
 @login_required
 def list_reports():
-    reports = Report.query.order_by(Report.submitted_at.desc()).all()
-    return render_template("reports/list.html", reports=reports)
+    show = request.args.get("show", "")
+    if show == "archived":
+        reports = (
+            Report.query.filter_by(is_archived=True)
+            .order_by(Report.submitted_at.desc())
+            .all()
+        )
+    else:
+        reports = (
+            Report.query.filter_by(is_archived=False)
+            .order_by(Report.submitted_at.desc())
+            .all()
+        )
+    return render_template(
+        "reports/list.html",
+        reports=reports,
+        show_archived=(show == "archived"),
+    )
 
 
 @bp.route("/new", methods=["GET", "POST"])
@@ -77,3 +94,35 @@ def approve(report_id: int):
     db.session.commit()
     flash("Report approved.", "success")
     return redirect(url_for("reports.detail", report_id=report_id))
+
+
+@bp.route("/<int:report_id>/archive", methods=["POST"])
+@admin_required
+def archive_report(report_id: int):
+    report = Report.query.get_or_404(report_id)
+    report.is_archived = True
+    report.archived_at = now_eastern()
+    report.archived_by_id = current_user.id
+    log_admin_action(
+        current_user.id, "archive_report", "report", report.id,
+        f'Archived report "{report.title}".',
+    )
+    db.session.commit()
+    flash("Report archived.", "info")
+    return redirect(url_for("reports.list_reports"))
+
+
+@bp.route("/<int:report_id>/unarchive", methods=["POST"])
+@admin_required
+def unarchive_report(report_id: int):
+    report = Report.query.get_or_404(report_id)
+    report.is_archived = False
+    report.archived_at = None
+    report.archived_by_id = None
+    log_admin_action(
+        current_user.id, "unarchive_report", "report", report.id,
+        f'Restored report "{report.title}" from archive.',
+    )
+    db.session.commit()
+    flash("Report restored from archive.", "success")
+    return redirect(url_for("reports.list_reports"))

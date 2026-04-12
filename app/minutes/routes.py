@@ -15,7 +15,8 @@ def list_minutes():
         Meeting.query.filter(
             Meeting.status.in_(
                 [MeetingStatus.adjourned, MeetingStatus.in_progress]
-            )
+            ),
+            Meeting.is_archived == False,  # noqa: E712
         )
         .order_by(Meeting.scheduled_start.desc())
         .all()

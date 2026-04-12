@@ -1,6 +1,7 @@
 from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from ..admin_log import log_admin_action
 from ..extensions import db
 from ..models import (
     Board,
@@ -14,7 +15,7 @@ from ..models import (
     RsvpStatus,
     User,
 )
-from ..permissions import SECRETARY_ROLES, role_required
+from ..permissions import SECRETARY_ROLES, admin_required, role_required
 from ..utils import now_eastern
 from ..kiosk import generate_kiosk_token
 from . import bp
@@ -75,11 +76,29 @@ def _ensure_attendance_rows(meeting: Meeting) -> None:
 @login_required
 def list_meetings():
     now = now_eastern()
+    show = request.args.get("show", "")
+
+    if show == "archived":
+        archived = (
+            Meeting.query.filter_by(is_archived=True)
+            .order_by(Meeting.scheduled_start.desc())
+            .all()
+        )
+        return render_template(
+            "meetings/list.html",
+            upcoming=[],
+            past=[],
+            archived=archived,
+            show_archived=True,
+            now=now,
+        )
+
     upcoming = (
         Meeting.query.filter(
             Meeting.status.in_(
                 [MeetingStatus.scheduled, MeetingStatus.in_progress]
-            )
+            ),
+            Meeting.is_archived == False,  # noqa: E712
         )
         .order_by(Meeting.scheduled_start.asc())
         .all()
@@ -88,14 +107,20 @@ def list_meetings():
         Meeting.query.filter(
             Meeting.status.in_(
                 [MeetingStatus.adjourned, MeetingStatus.cancelled]
-            )
+            ),
+            Meeting.is_archived == False,  # noqa: E712
         )
         .order_by(Meeting.scheduled_start.desc())
         .limit(50)
         .all()
     )
     return render_template(
-        "meetings/list.html", upcoming=upcoming, past=past, now=now
+        "meetings/list.html",
+        upcoming=upcoming,
+        past=past,
+        archived=[],
+        show_archived=False,
+        now=now,
     )
 
 
@@ -225,3 +250,35 @@ def kiosk_link(meeting_id: int):
     meeting = Meeting.query.get_or_404(meeting_id)
     token = generate_kiosk_token(meeting.id)
     return redirect(url_for("kiosk.checkin_page", token=token))
+
+
+@bp.route("/<int:meeting_id>/archive", methods=["POST"])
+@admin_required
+def archive_meeting(meeting_id: int):
+    meeting = Meeting.query.get_or_404(meeting_id)
+    meeting.is_archived = True
+    meeting.archived_at = now_eastern()
+    meeting.archived_by_id = current_user.id
+    log_admin_action(
+        current_user.id, "archive_meeting", "meeting", meeting.id,
+        f'Archived meeting "{meeting.title}".',
+    )
+    db.session.commit()
+    flash("Meeting archived.", "info")
+    return redirect(url_for("meetings.list_meetings"))
+
+
+@bp.route("/<int:meeting_id>/unarchive", methods=["POST"])
+@admin_required
+def unarchive_meeting(meeting_id: int):
+    meeting = Meeting.query.get_or_404(meeting_id)
+    meeting.is_archived = False
+    meeting.archived_at = None
+    meeting.archived_by_id = None
+    log_admin_action(
+        current_user.id, "unarchive_meeting", "meeting", meeting.id,
+        f'Restored meeting "{meeting.title}" from archive.',
+    )
+    db.session.commit()
+    flash("Meeting restored from archive.", "success")
+    return redirect(url_for("meetings.list_meetings"))

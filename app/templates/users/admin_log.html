@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Admin log{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Admin action log</h1>
+<div class="card shadow-sm">
+<table class="table table-hover mb-0">
+  <thead><tr><th>When</th><th>Admin</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead>
+  <tbody>
+    {% for a in actions %}
+    <tr>
+      <td class="text-nowrap small">{{ a.created_at.strftime('%Y-%m-%d %I:%M %p') }} ET</td>
+      <td>{{ a.admin.full_name }}</td>
+      <td><code>{{ a.action }}</code></td>
+      <td>{{ a.target_type }}{% if a.target_id %} #{{ a.target_id }}{% endif %}</td>
+      <td class="small">{{ a.detail }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="text-muted">No admin actions recorded yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% if pagination.pages > 1 %}
+<nav class="mt-3">
+  <ul class="pagination pagination-sm justify-content-center">
+    {% if pagination.has_prev %}
+    <li class="page-item"><a class="page-link" href="?page={{ pagination.prev_num }}">Previous</a></li>
+    {% endif %}
+    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if p %}
+      <li class="page-item {{ 'active' if p == pagination.page else '' }}">
+        <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+      </li>
+      {% else %}
+      <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+      {% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}
+    <li class="page-item"><a class="page-link" href="?page={{ pagination.next_num }}">Next</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}

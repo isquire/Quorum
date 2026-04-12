@@ -27,6 +27,7 @@
         <li class="nav-item"><a class="nav-link" href="{{ url_for('boards.list_boards') }}">Boards</a></li>
         {% if current_user.role.value == 'admin' %}
         <li class="nav-item"><a class="nav-link" href="{{ url_for('users.list_users') }}">Users</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('users.admin_log') }}">Admin log</a></li>
         {% endif %}
         <li class="nav-item"><a class="nav-link" href="{{ url_for('main.guide') }}">Guide</a></li>
       </ul>

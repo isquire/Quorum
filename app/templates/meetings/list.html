@@ -4,10 +4,47 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h3">Meetings</h1>
-  {% if current_user.role.value in ['chair', 'vice_chair', 'admin', 'pastor'] %}
-  <a class="btn btn-primary" href="{{ url_for('meetings.create_meeting') }}">+ New meeting</a>
-  {% endif %}
+  <div class="d-flex gap-2">
+    {% if current_user.role.value == 'admin' %}
+      {% if show_archived %}
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('meetings.list_meetings') }}">Active meetings</a>
+      {% else %}
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('meetings.list_meetings', show='archived') }}">View archived</a>
+      {% endif %}
+    {% endif %}
+    {% if current_user.role.value in ['chair', 'vice_chair', 'admin', 'pastor'] %}
+    <a class="btn btn-primary" href="{{ url_for('meetings.create_meeting') }}">+ New meeting</a>
+    {% endif %}
+  </div>
 </div>
+
+{% if show_archived %}
+<h2 class="h5">Archived meetings</h2>
+<div class="card shadow-sm mb-4">
+<table class="table table-hover mb-0">
+  <thead><tr><th>Title</th><th>Date</th><th>Status</th><th>Archived</th><th></th></tr></thead>
+  <tbody>
+    {% for m in archived %}
+    <tr>
+      <td><a href="{{ url_for('meetings.meeting_detail', meeting_id=m.id) }}">{{ m.title }}</a></td>
+      <td>{{ m.scheduled_start.strftime('%Y-%m-%d') }}</td>
+      <td>{{ status_badge(m.status) }}</td>
+      <td class="small text-muted">{{ m.archived_at.strftime('%Y-%m-%d') if m.archived_at else '' }}</td>
+      <td class="text-end">
+        <form method="post" action="{{ url_for('meetings.unarchive_meeting', meeting_id=m.id) }}" class="d-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-sm btn-outline-success">Restore</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="text-muted">No archived meetings.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+
+{% else %}
 
 <h2 class="h5">Upcoming &amp; in progress</h2>
 <div class="card shadow-sm mb-4">
@@ -45,6 +82,12 @@
       <td>{{ status_badge(m.status) }}</td>
       <td class="text-end">
         <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('minutes.detail', meeting_id=m.id) }}">Minutes</a>
+        {% if current_user.role.value == 'admin' %}
+        <form method="post" action="{{ url_for('meetings.archive_meeting', meeting_id=m.id) }}" class="d-inline" onsubmit="return confirm('Archive this meeting?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-sm btn-outline-warning">Archive</button>
+        </form>
+        {% endif %}
       </td>
     </tr>
     {% else %}
@@ -53,4 +96,5 @@
   </tbody>
 </table>
 </div>
+{% endif %}
 {% endblock %}

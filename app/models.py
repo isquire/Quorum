@@ -627,10 +627,18 @@ class Meeting(TimestampMixin, db.Model):
         db.Integer, db.ForeignKey("users.id"), nullable=True
     )
 
+    # Archive support — admins can archive meetings to hide from normal views.
+    is_archived = db.Column(db.Boolean, nullable=False, default=False)
+    archived_at = db.Column(db.DateTime, nullable=True)
+    archived_by_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=True
+    )
+
     # Relationships
     board = db.relationship("Board", back_populates="meetings")
     created_by = db.relationship("User", foreign_keys=[created_by_id])
     acting_chair = db.relationship("User", foreign_keys=[acting_chair_id])
+    archived_by = db.relationship("User", foreign_keys=[archived_by_id])
     minutes_approved_by = db.relationship(
         "User", foreign_keys=[minutes_approved_by_id]
     )
@@ -1015,16 +1023,44 @@ class Report(TimestampMixin, db.Model):
         db.Integer, db.ForeignKey("users.id"), nullable=True
     )
 
+    # Archive support — admins can archive reports to hide from normal views.
+    is_archived = db.Column(db.Boolean, nullable=False, default=False)
+    archived_at = db.Column(db.DateTime, nullable=True)
+    archived_by_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=True
+    )
+
     submitted_by = db.relationship(
         "User", foreign_keys=[submitted_by_id], back_populates="submitted_reports"
     )
     approved_by = db.relationship("User", foreign_keys=[approved_by_id])
+    archived_by = db.relationship("User", foreign_keys=[archived_by_id])
     meeting = db.relationship("Meeting", back_populates="reports")
     attachments = db.relationship(
         "Attachment",
         back_populates="report",
         foreign_keys="Attachment.report_id",
     )
+
+
+class AdminAction(db.Model):
+    """Audit log of every admin action in the system."""
+    __tablename__ = "admin_actions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    admin_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False
+    )
+    action = db.Column(db.String(100), nullable=False)
+    target_type = db.Column(db.String(50), nullable=False)
+    target_id = db.Column(db.Integer, nullable=True)
+    detail = db.Column(db.Text, nullable=False, default="")
+    created_at = db.Column(db.DateTime, nullable=False, default=now_eastern)
+
+    admin = db.relationship("User", foreign_keys=[admin_id])
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<AdminAction {self.action} by user {self.admin_id}>"
 
 
 class Attachment(TimestampMixin, db.Model):

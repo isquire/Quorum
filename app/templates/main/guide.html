@@ -27,7 +27,9 @@
           <a class="list-group-item list-group-item-action" href="#timezone">18. Timezone</a>
           <a class="list-group-item list-group-item-action" href="#kiosk-mode">19. Kiosk check-in mode</a>
           <a class="list-group-item list-group-item-action" href="#confidential">20. Confidential minutes</a>
-          <a class="list-group-item list-group-item-action" href="#tips">21. Tips &amp; pitfalls</a>
+          <a class="list-group-item list-group-item-action" href="#archiving">21. Archiving meetings &amp; reports</a>
+          <a class="list-group-item list-group-item-action" href="#admin-log">22. Admin action log</a>
+          <a class="list-group-item list-group-item-action" href="#tips">23. Tips &amp; pitfalls</a>
         </nav>
       </div>
     </div>
@@ -754,8 +756,77 @@
       </p>
     </section>
 
+    <section id="archiving" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">21. Archiving meetings &amp; reports</h2>
+      <p>
+        Admins can <strong>archive</strong> meetings and reports to remove them
+        from the normal views without permanently deleting them. This is useful
+        for cleaning up test meetings, cancelled items, or records that no
+        longer need to appear in day-to-day lists.
+      </p>
+
+      <h5>How to archive</h5>
+      <ul>
+        <li>
+          On the <strong>Meetings</strong> list page, each past meeting row has
+          an <strong>Archive</strong> button (admin only). You can also archive
+          from the meeting detail page.
+        </li>
+        <li>
+          On the <strong>Reports</strong> list page, each report row has an
+          <strong>Archive</strong> button (admin only). You can also archive
+          from the report detail page.
+        </li>
+        <li>A confirmation prompt appears before archiving.</li>
+      </ul>
+
+      <h5>Viewing archived items</h5>
+      <p>
+        On the Meetings or Reports list page, click
+        <strong>View archived</strong> (top-right) to see all archived items.
+        From this view, click <strong>Restore</strong> to move an item back
+        into the active list. Only admins can see this toggle.
+      </p>
+
+      <h5>What archiving affects</h5>
+      <ul>
+        <li>Archived meetings are hidden from the dashboard, meetings list, and minutes list.</li>
+        <li>Archived reports are hidden from the dashboard and reports list.</li>
+        <li>Archived items are <strong>not deleted</strong> &mdash; all data (minutes, motions, votes, attachments) is preserved.</li>
+        <li>Direct links to archived meetings and reports still work for anyone who has the URL.</li>
+        <li>Every archive and restore action is recorded in the admin action log.</li>
+      </ul>
+    </section>
+
+    <section id="admin-log" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">22. Admin action log</h2>
+      <p>
+        Every admin action in the system is recorded in a permanent audit log.
+        Admins can view the log by clicking <strong>Admin log</strong> in the
+        top navigation bar.
+      </p>
+
+      <h5>What is logged</h5>
+      <ul>
+        <li>User management: creating, editing, deactivating, activating, and resetting passwords for users.</li>
+        <li>Archiving and restoring meetings and reports.</li>
+      </ul>
+
+      <h5>Log details</h5>
+      <p>
+        Each entry shows the timestamp, which admin performed the action, the
+        action type, the target (e.g. user #5, meeting #12), and a
+        human-readable description. The log is sorted newest-first and
+        paginated at 50 entries per page.
+      </p>
+      <p class="mb-0">
+        The admin log is read-only &mdash; entries cannot be edited or deleted.
+        This ensures a reliable audit trail for governance purposes.
+      </p>
+    </section>
+
     <section id="tips" class="mb-5">
-      <h2 class="h4 border-bottom pb-2">21. Tips &amp; pitfalls</h2>
+      <h2 class="h4 border-bottom pb-2">23. Tips &amp; pitfalls</h2>
       <ul>
         <li><strong>One browser per person.</strong> Every attending board member should have Quorum open on their own device so they can second motions and cast their own votes.</li>
         <li><strong>Don&rsquo;t forget to open the vote.</strong> A common slip-up: chair discusses a motion and then tries to advance without opening the vote. The motion stays on the floor and blocks advancement.</li>

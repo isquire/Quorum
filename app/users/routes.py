@@ -1,7 +1,9 @@
-from flask import flash, redirect, render_template, url_for
+from flask import flash, redirect, render_template, request, url_for
+from flask_login import current_user
 
+from ..admin_log import log_admin_action
 from ..extensions import db
-from ..models import Role, User
+from ..models import AdminAction, Role, User
 from ..permissions import admin_required
 from . import bp
 from .forms import ResetPasswordForm, UserCreateForm, UserEditForm
@@ -35,6 +37,11 @@ def create_user():
             )
             user.set_password(form.password.data)
             db.session.add(user)
+            db.session.flush()
+            log_admin_action(
+                current_user.id, "create_user", "user", user.id,
+                f"Created user {user.email} with role {user.role.value}.",
+            )
             db.session.commit()
             flash(f"Created user {user.email}.", "success")
             return redirect(url_for("users.list_users"))
@@ -56,6 +63,10 @@ def edit_user(user_id: int):
         user.is_active_member = form.is_active_member.data
         user.family_group = (form.family_group.data or "").strip() or None
         user.committees = (form.committees.data or "").strip()
+        log_admin_action(
+            current_user.id, "edit_user", "user", user.id,
+            f"Edited user {user.email}.",
+        )
         db.session.commit()
         flash("User updated.", "success")
         return redirect(url_for("users.list_users"))
@@ -73,6 +84,10 @@ def edit_user(user_id: int):
 def deactivate_user(user_id: int):
     user = User.query.get_or_404(user_id)
     user.is_active = False
+    log_admin_action(
+        current_user.id, "deactivate_user", "user", user.id,
+        f"Deactivated user {user.email}.",
+    )
     db.session.commit()
     flash(f"Deactivated {user.email}.", "info")
     return redirect(url_for("users.list_users"))
@@ -83,6 +98,10 @@ def deactivate_user(user_id: int):
 def activate_user(user_id: int):
     user = User.query.get_or_404(user_id)
     user.is_active = True
+    log_admin_action(
+        current_user.id, "activate_user", "user", user.id,
+        f"Activated user {user.email}.",
+    )
     db.session.commit()
     flash(f"Activated {user.email}.", "success")
     return redirect(url_for("users.list_users"))
@@ -95,9 +114,30 @@ def reset_password(user_id: int):
     form = ResetPasswordForm()
     if form.validate_on_submit():
         user.set_password(form.password.data)
+        log_admin_action(
+            current_user.id, "reset_password", "user", user.id,
+            f"Reset password for {user.email}.",
+        )
         db.session.commit()
         flash(f"Password reset for {user.email}.", "success")
         return redirect(url_for("users.list_users"))
     return render_template(
         "users/reset_password.html", form=form, user=user
+    )
+
+
+@bp.route("/admin-log")
+@admin_required
+def admin_log():
+    page = request.args.get("page", 1, type=int)
+    per_page = 50
+    pagination = (
+        AdminAction.query
+        .order_by(AdminAction.created_at.desc())
+        .paginate(page=page, per_page=per_page, error_out=False)
+    )
+    return render_template(
+        "users/admin_log.html",
+        actions=pagination.items,
+        pagination=pagination,
     )

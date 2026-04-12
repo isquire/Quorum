@@ -16,7 +16,8 @@ def dashboard():
         Meeting.query.filter(
             Meeting.status.in_(
                 [MeetingStatus.scheduled, MeetingStatus.in_progress]
-            )
+            ),
+            Meeting.is_archived == False,  # noqa: E712
         )
         .filter(Meeting.scheduled_start >= now)
         .order_by(Meeting.scheduled_start.asc())
@@ -24,18 +25,21 @@ def dashboard():
         .all()
     )
     in_progress = (
-        Meeting.query.filter_by(status=MeetingStatus.in_progress)
+        Meeting.query.filter_by(status=MeetingStatus.in_progress, is_archived=False)
         .order_by(Meeting.scheduled_start.asc())
         .all()
     )
     recent = (
-        Meeting.query.filter_by(status=MeetingStatus.adjourned)
+        Meeting.query.filter_by(status=MeetingStatus.adjourned, is_archived=False)
         .order_by(Meeting.adjourned_at.desc())
         .limit(5)
         .all()
     )
     pending_reports = (
-        Report.query.filter(Report.approved_at.is_(None))
+        Report.query.filter(
+            Report.approved_at.is_(None),
+            Report.is_archived == False,  # noqa: E712
+        )
         .order_by(Report.submitted_at.desc())
         .limit(5)
         .all()

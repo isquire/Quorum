@@ -2,12 +2,28 @@
 {% block title %}Reports{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h3">Reports</h1>
-  <a class="btn btn-primary" href="{{ url_for('reports.create_report') }}">+ Submit report</a>
+  <h1 class="h3">Reports{% if show_archived %} (Archived){% endif %}</h1>
+  <div class="d-flex gap-2">
+    {% if current_user.role.value == 'admin' %}
+      {% if show_archived %}
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('reports.list_reports') }}">Active reports</a>
+      {% else %}
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('reports.list_reports', show='archived') }}">View archived</a>
+      {% endif %}
+    {% endif %}
+    <a class="btn btn-primary" href="{{ url_for('reports.create_report') }}">+ Submit report</a>
+  </div>
 </div>
 <div class="card shadow-sm">
 <table class="table table-hover mb-0">
-  <thead><tr><th>Title</th><th>Type</th><th>Submitted by</th><th>Date</th><th>Approved</th></tr></thead>
+  <thead>
+    <tr>
+      <th>Title</th><th>Type</th><th>Submitted by</th><th>Date</th>
+      <th>Approved</th>
+      {% if show_archived and current_user.role.value == 'admin' %}<th></th>{% endif %}
+      {% if not show_archived and current_user.role.value == 'admin' %}<th></th>{% endif %}
+    </tr>
+  </thead>
   <tbody>
     {% for r in reports %}
     <tr>
@@ -16,9 +32,25 @@
       <td>{{ r.submitted_by.full_name }}</td>
       <td>{{ r.submitted_at.strftime('%Y-%m-%d') }}</td>
       <td>{% if r.approved_at %}<span class="text-success">yes</span>{% else %}<span class="text-muted">no</span>{% endif %}</td>
+      {% if show_archived and current_user.role.value == 'admin' %}
+      <td class="text-end">
+        <form method="post" action="{{ url_for('reports.unarchive_report', report_id=r.id) }}" class="d-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-sm btn-outline-success">Restore</button>
+        </form>
+      </td>
+      {% endif %}
+      {% if not show_archived and current_user.role.value == 'admin' %}
+      <td class="text-end">
+        <form method="post" action="{{ url_for('reports.archive_report', report_id=r.id) }}" class="d-inline" onsubmit="return confirm('Archive this report?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-sm btn-outline-warning">Archive</button>
+        </form>
+      </td>
+      {% endif %}
     </tr>
     {% else %}
-    <tr><td colspan="5" class="text-muted">No reports yet.</td></tr>
+    <tr><td colspan="{% if current_user.role.value == 'admin' %}6{% else %}5{% endif %}" class="text-muted">No reports{% if show_archived %} archived{% endif %} yet.</td></tr>
     {% endfor %}
   </tbody>
 </table>

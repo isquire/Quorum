@@ -32,6 +32,19 @@
     {% if current_user.role.value in ['chair', 'vice_chair', 'admin', 'pastor'] and meeting.status.value == 'scheduled' %}
       <a class="btn btn-outline-secondary" href="{{ url_for('meetings.edit_meeting', meeting_id=meeting.id) }}">Edit</a>
     {% endif %}
+    {% if current_user.role.value == 'admin' %}
+      {% if meeting.is_archived %}
+        <form method="post" action="{{ url_for('meetings.unarchive_meeting', meeting_id=meeting.id) }}" class="d-inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-outline-success btn-sm">Restore from archive</button>
+        </form>
+      {% else %}
+        <form method="post" action="{{ url_for('meetings.archive_meeting', meeting_id=meeting.id) }}" class="d-inline" onsubmit="return confirm('Archive this meeting?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-outline-warning btn-sm">Archive</button>
+        </form>
+      {% endif %}
+    {% endif %}
   </div>
 </div>
 

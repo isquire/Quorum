@@ -20,6 +20,19 @@
     {% elif report.approved_at %}
       <span class="badge bg-success">Approved {{ report.approved_at.strftime('%Y-%m-%d') }}</span>
     {% endif %}
+    {% if current_user.role.value == 'admin' %}
+      {% if report.is_archived %}
+        <form method="post" action="{{ url_for('reports.unarchive_report', report_id=report.id) }}" class="d-inline ms-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-outline-success btn-sm">Restore from archive</button>
+        </form>
+      {% else %}
+        <form method="post" action="{{ url_for('reports.archive_report', report_id=report.id) }}" class="d-inline ms-2" onsubmit="return confirm('Archive this report?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-outline-warning btn-sm">Archive</button>
+        </form>
+      {% endif %}
+    {% endif %}
   </div>
 </div>
 
