@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <h1 class="h3 mb-4">About Quorum</h1>
+
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header">Church Identity</div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">Display name</dt>
+          <dd class="col-sm-8">{{ church_display_name }}</dd>
+
+          <dt class="col-sm-4">Legal name (bylaws)</dt>
+          <dd class="col-sm-8">{{ church_legal_name }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header">Parliamentary Authority</div>
+      <div class="card-body">
+        <p class="mb-0">
+          Per <strong>Bylaws Article VIII</strong>, the church shall be
+          governed by parliamentary procedure as set forth in the current
+          edition of <em>{{ parliamentary_authority }}</em>, in keeping
+          with the spirit of Christian love and fellowship.
+        </p>
+      </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header">Quorum Rules by Body</div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Body</th>
+                <th>Quorum rule</th>
+                <th>Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Assembly (congregational business meetings)</td>
+                <td>One-third or more of active members present</td>
+                <td>Constitution Art. VIII &sect;4</td>
+              </tr>
+              <tr>
+                <td>Board of Deacons</td>
+                <td>Majority present, all members notified</td>
+                <td>Bylaws Art. I &sect;2</td>
+              </tr>
+              <tr>
+                <td>Board of Administration</td>
+                <td>Majority present, all members notified</td>
+                <td>Bylaws Art. I &sect;3</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header">Application</div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">Application name</dt>
+          <dd class="col-sm-8">{{ app_name }}</dd>
+
+          <dt class="col-sm-4">Purpose</dt>
+          <dd class="col-sm-8">
+            Schedule meetings, build agendas, run meetings live under
+            {{ parliamentary_authority }}, record minutes automatically,
+            and archive minutes and reports.
+          </dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

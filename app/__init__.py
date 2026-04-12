@@ -84,6 +84,16 @@ def create_app(config_name: str | None = None) -> Flask:
     def _inject_globals():
         return {
             "app_name": "Quorum",
+            "church_display_name": app.config.get(
+                "CHURCH_DISPLAY_NAME", "Connection Church"
+            ),
+            "church_legal_name": app.config.get(
+                "CHURCH_LEGAL_NAME", "Tri-City Assembly of God"
+            ),
+            "parliamentary_authority": app.config.get(
+                "PARLIAMENTARY_AUTHORITY",
+                "Robert's Rules of Order Newly Revised",
+            ),
             "stage_labels": STAGE_LABELS,
             "motion_type_labels": MOTION_TYPE_LABELS,
         }

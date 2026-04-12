@@ -28,9 +28,14 @@ class BaseConfig:
 
     TIMEZONE = os.environ.get("TIMEZONE", "America/Chicago")
 
-    # Quorum rule: majority of voting members (ceil(n/2) + 1 or
-    # traditional "simple majority"); we use floor(n/2) + 1.
-    QUORUM_FRACTION = 0.5  # strictly more than half
+    # Church identity — day-to-day UI name vs. legal name on bylaws.
+    CHURCH_DISPLAY_NAME = os.environ.get(
+        "CHURCH_DISPLAY_NAME", "Connection Church"
+    )
+    CHURCH_LEGAL_NAME = os.environ.get(
+        "CHURCH_LEGAL_NAME", "Tri-City Assembly of God"
+    )
+    PARLIAMENTARY_AUTHORITY = "Robert's Rules of Order Newly Revised"
 
 
 class DevConfig(BaseConfig):

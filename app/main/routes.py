@@ -52,3 +52,9 @@ def dashboard():
 @login_required
 def guide():
     return render_template("main/guide.html")
+
+
+@bp.route("/about")
+@login_required
+def about():
+    return render_template("main/about.html")

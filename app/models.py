@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import enum
+import math
 from datetime import datetime
 
 from flask_login import UserMixin
@@ -30,6 +31,9 @@ class MeetingType(str, enum.Enum):
     special = "special"
     annual = "annual"
     emergency = "emergency"
+    # Bylaws-specific types (Phase A)
+    annual_business = "annual_business"
+    special_business = "special_business"
 
 
 class MeetingStatus(str, enum.Enum):
@@ -178,6 +182,9 @@ class User(UserMixin, TimestampMixin, db.Model):
     )
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     is_voting_member = db.Column(db.Boolean, nullable=False, default=True)
+    # Bylaws Art III §5 — tracks active membership for quorum denominator.
+    # Secretary toggles this during membership roll revisions.
+    is_active_member = db.Column(db.Boolean, nullable=False, default=True)
     committees = db.Column(db.String(500), nullable=False, default="")
 
     # Relationships
@@ -350,12 +357,28 @@ class Meeting(TimestampMixin, db.Model):
         )
 
     @property
+    def is_assembly_meeting(self) -> bool:
+        """True for congregational business meetings (annual or special)."""
+        return self.meeting_type in {
+            MeetingType.annual_business,
+            MeetingType.special_business,
+        }
+
+    @property
     def quorum_threshold(self) -> int:
-        # Strictly more than half of voting members.
+        if self.is_assembly_meeting:
+            # Constitution Art VIII §4: one-third of active members.
+            active = User.query.filter_by(is_active_member=True).count()
+            return math.ceil(active / 3) if active > 0 else 1
+        # Board meetings: majority of voting members in attendance list.
         return (self.voting_member_count // 2) + 1
 
     @property
     def has_quorum(self) -> bool:
+        if self.is_assembly_meeting:
+            # For assembly meetings, count all present attendees.
+            return self.present_count >= self.quorum_threshold
+        # For board meetings, count present *voting* members.
         present_voting = sum(
             1
             for a in self.attendances

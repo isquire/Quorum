@@ -29,6 +29,7 @@ def create_user():
                 role=Role(form.role.data),
                 is_voting_member=form.is_voting_member.data,
                 is_active=form.is_active.data,
+                is_active_member=form.is_active_member.data,
                 committees=(form.committees.data or "").strip(),
             )
             user.set_password(form.password.data)
@@ -51,6 +52,7 @@ def edit_user(user_id: int):
         user.role = Role(form.role.data)
         user.is_voting_member = form.is_voting_member.data
         user.is_active = form.is_active.data
+        user.is_active_member = form.is_active_member.data
         user.committees = (form.committees.data or "").strip()
         db.session.commit()
         flash("User updated.", "success")

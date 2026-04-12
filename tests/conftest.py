@@ -43,6 +43,7 @@ def _make_user(
     role: Role,
     password: str = "secret123",
     is_voting_member: bool = True,
+    is_active_member: bool = True,
 ) -> User:
     user = User(
         email=email,
@@ -50,6 +51,7 @@ def _make_user(
         role=role,
         is_active=True,
         is_voting_member=is_voting_member,
+        is_active_member=is_active_member,
     )
     user.set_password(password)
     _db.session.add(user)

@@ -20,6 +20,7 @@ class UserCreateForm(FlaskForm):
     role = SelectField("Role", choices=ROLE_CHOICES, validators=[DataRequired()])
     is_voting_member = BooleanField("Voting member", default=True)
     is_active = BooleanField("Active", default=True)
+    is_active_member = BooleanField("Active member (counts toward quorum)", default=True)
     committees = StringField(
         "Committees (comma-separated)", validators=[Optional()]
     )
@@ -36,6 +37,7 @@ class UserEditForm(FlaskForm):
     role = SelectField("Role", choices=ROLE_CHOICES, validators=[DataRequired()])
     is_voting_member = BooleanField("Voting member")
     is_active = BooleanField("Active")
+    is_active_member = BooleanField("Active member (counts toward quorum)")
     committees = StringField(
         "Committees (comma-separated)", validators=[Optional()]
     )
