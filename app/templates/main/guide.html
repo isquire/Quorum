@@ -30,6 +30,7 @@
           <a class="list-group-item list-group-item-action" href="#archiving">21. Archiving meetings &amp; reports</a>
           <a class="list-group-item list-group-item-action" href="#admin-log">22. Admin action log</a>
           <a class="list-group-item list-group-item-action" href="#tips">23. Tips &amp; pitfalls</a>
+          <a class="list-group-item list-group-item-action" href="#quick-ref">Quick reference</a>
         </nav>
       </div>
     </div>
@@ -835,6 +836,102 @@
         <li><strong>Fix wording before approval.</strong> The secretary can edit any minutes entry until the chair approves them at the next meeting. After approval, the record is frozen.</li>
         <li><strong>If the quorum badge is red, stop.</strong> Robert&rsquo;s Rules does not let you conduct substantive business without quorum. You can recess, set a future date, or adjourn.</li>
       </ul>
+    </section>
+
+    <section id="quick-ref" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">Quick reference &mdash; meeting flow at a glance</h2>
+      <p class="text-muted small">A simplified mental model of how Quorum works from start to finish.</p>
+
+      <div class="card shadow-sm">
+        <div class="card-body font-monospace small" style="line-height:1.7;">
+
+<!-- ── BEFORE ── -->
+<strong>BEFORE THE MEETING</strong>
+<div class="ms-3">
+Admin creates users &amp; assigns roles
+<div class="text-muted">&darr;</div>
+Chair/Secretary schedules meeting &amp; selects board
+<div class="text-muted">&darr;</div>
+Chair/Secretary builds the agenda (mark items <span class="badge bg-dark">confidential</span> if needed)
+<div class="text-muted">&darr;</div>
+Treasurer/Committees file reports &amp; attach documents
+<div class="text-muted">&darr;</div>
+Members RSVP
+</div>
+
+<hr class="my-3">
+
+<!-- ── DURING ── -->
+<strong>DURING THE MEETING</strong>
+<div class="ms-3">
+Chair clicks <strong>Start meeting</strong> &rarr; Call to order logged
+<div class="text-muted">&darr;</div>
+<strong>Roll call</strong> &mdash; Secretary marks attendance (or open <strong>Kiosk</strong> for self-check-in)
+<div class="text-muted">&darr;</div>
+Quorum badge turns <span class="badge bg-success">green</span> when threshold met
+<div class="text-muted">&darr;</div>
+Chair advances through stages:
+<div class="ms-3 text-muted">
+Minutes approval &rarr; Reports &rarr; Unfinished business &rarr; New business &rarr; Announcements
+</div>
+<div class="text-muted">&darr;</div>
+For each agenda item the chair &ldquo;takes up&rdquo;:
+<div class="ms-3">
+<table class="table table-sm table-borderless mb-0" style="max-width:480px;">
+  <tr><td class="text-end text-muted pe-2" style="width:90px;">Motion</td><td>&rarr; member makes a motion</td></tr>
+  <tr><td class="text-end text-muted pe-2">Second</td><td>&rarr; different member seconds</td></tr>
+  <tr><td class="text-end text-muted pe-2">Debate</td><td>&rarr; discussion (chair manages verbally)</td></tr>
+  <tr><td class="text-end text-muted pe-2">Vote</td><td>&rarr; chair opens vote &rarr; members vote &rarr; chair closes vote</td></tr>
+  <tr><td class="text-end text-muted pe-2">Result</td><td>&rarr; <span class="badge bg-success">passed</span> or <span class="badge bg-danger">failed</span> logged automatically</td></tr>
+</table>
+</div>
+<div class="text-muted">&darr;</div>
+Chair/Secretary adds notes for anything not captured structurally
+<div class="text-muted">&darr;</div>
+Chair clicks <strong>Adjourn</strong> &rarr; meeting frozen, minutes complete
+</div>
+
+<hr class="my-3">
+
+<!-- ── AFTER ── -->
+<strong>AFTER THE MEETING</strong>
+<div class="ms-3">
+Secretary reviews &amp; edits minutes wording
+<div class="text-muted">&darr;</div>
+Export minutes as <code>.txt</code> (confidential items auto-redacted for non-officers)
+<div class="text-muted">&darr;</div>
+At the <em>next</em> meeting &rarr; Chair approves minutes &rarr; record locked
+</div>
+
+<hr class="my-3">
+
+<!-- ── ONGOING ── -->
+<strong>ONGOING ADMIN</strong>
+<div class="ms-3">
+<table class="table table-sm table-borderless mb-0" style="max-width:520px;">
+  <tr><td style="width:160px;">Manage users</td><td class="text-muted">Create, edit, activate/deactivate, reset passwords</td></tr>
+  <tr><td>Track board terms</td><td class="text-muted">Record elections, monitor expirations &amp; cooldowns</td></tr>
+  <tr><td>Archive old items</td><td class="text-muted">Hide test/obsolete meetings &amp; reports (restorable)</td></tr>
+  <tr><td>Review admin log</td><td class="text-muted">Audit trail of every admin action</td></tr>
+</table>
+</div>
+
+<hr class="my-3">
+
+<!-- ── KEY ROLES ── -->
+<strong>WHO DOES WHAT</strong>
+<div class="ms-3">
+<table class="table table-sm table-borderless mb-0" style="max-width:520px;">
+  <tr><td style="width:160px;"><span class="badge bg-dark">Admin</span></td><td>Manages users, archives items, views audit log</td></tr>
+  <tr><td><span class="badge bg-primary">Chair / Pastor</span></td><td>Schedules meetings, drives the live session, approves minutes &amp; reports</td></tr>
+  <tr><td><span class="badge bg-info text-dark">Secretary</span></td><td>Builds agendas, takes roll call, edits minutes, opens kiosk</td></tr>
+  <tr><td><span class="badge bg-success">Treasurer</span></td><td>Files financial reports</td></tr>
+  <tr><td><span class="badge bg-secondary">Members</span></td><td>RSVP, make &amp; second motions, cast votes</td></tr>
+</table>
+</div>
+
+        </div>
+      </div>
     </section>
 
     <div class="alert alert-secondary small">
