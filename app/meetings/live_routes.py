@@ -5,8 +5,6 @@ amended, voted, and every action is auto-logged to the minutes timeline.
 """
 from __future__ import annotations
 
-from datetime import datetime
-
 from flask import (
     Blueprint,
     abort,
@@ -38,6 +36,7 @@ from ..models import (
     VoteMethod,
 )
 from ..permissions import CHAIR_ROLES, SECRETARY_ROLES, role_required, voting_member_required
+from ..utils import now_eastern
 from ..rro import (
     MAIN_MOTION_STAGES,
     available_motion_types,
@@ -180,7 +179,7 @@ def call_to_order(meeting_id: int):
     stages = stage_order_for(meeting.meeting_type)
     first_stage = stages[1] if len(stages) > 1 else MeetingStage.call_to_order
     meeting.current_stage = first_stage
-    meeting.called_to_order_at = datetime.utcnow()
+    meeting.called_to_order_at = now_eastern()
     minutes_logger.log_call_to_order(meeting, current_user)
     db.session.commit()
     flash("Meeting called to order.", "success")
@@ -239,7 +238,7 @@ def adjourn(meeting_id: int):
     _require_chair_or_vice(meeting)
     meeting.status = MeetingStatus.adjourned
     meeting.current_stage = MeetingStage.adjourned
-    meeting.adjourned_at = datetime.utcnow()
+    meeting.adjourned_at = now_eastern()
     meeting.current_motion_id = None
     meeting.current_agenda_item_id = None
     minutes_logger.log_adjournment(meeting, current_user)
@@ -266,7 +265,7 @@ def toggle_attendance(meeting_id: int, user_id: int):
 
     attendance.is_present = not attendance.is_present
     if attendance.is_present and attendance.arrived_at is None:
-        attendance.arrived_at = datetime.utcnow()
+        attendance.arrived_at = now_eastern()
     minutes_logger.log_attendance(
         meeting, user, attendance.is_present, current_user
     )
@@ -286,7 +285,7 @@ def mark_notified(meeting_id: int, user_id: int):
     ).first_or_404()
 
     if attendance.notified_at is None:
-        attendance.notified_at = datetime.utcnow()
+        attendance.notified_at = now_eastern()
     else:
         # Toggle: clear the notified timestamp.
         attendance.notified_at = None
@@ -465,12 +464,12 @@ def cast_vote(meeting_id: int, motion_id: int):
                 motion_id=motion.id,
                 user_id=current_user.id,
                 choice=choice,
-                cast_at=datetime.utcnow(),
+                cast_at=now_eastern(),
             )
         )
     else:
         existing.choice = choice
-        existing.cast_at = datetime.utcnow()
+        existing.cast_at = now_eastern()
 
     db.session.flush()
     motion.recount()
@@ -501,7 +500,7 @@ def close_vote(meeting_id: int, motion_id: int):
     motion.status = (
         MotionStatus.passed if result.value == "passed" else MotionStatus.failed
     )
-    motion.voted_at = datetime.utcnow()
+    motion.voted_at = now_eastern()
 
     # If this motion was the current motion, pop back to its parent
     # (so amendments return control to the main motion).

@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
@@ -17,6 +15,7 @@ from ..models import (
     User,
 )
 from ..permissions import role_required
+from ..utils import now_eastern
 from . import bp
 from .forms import MeetingForm, RsvpForm
 
@@ -74,7 +73,7 @@ def _ensure_attendance_rows(meeting: Meeting) -> None:
 @bp.route("/")
 @login_required
 def list_meetings():
-    now = datetime.utcnow()
+    now = now_eastern()
     upcoming = (
         Meeting.query.filter(
             Meeting.status.in_(

@@ -5,8 +5,6 @@ minutes timeline always reflects reality.
 """
 from __future__ import annotations
 
-from datetime import datetime
-
 from sqlalchemy import func
 
 from .extensions import db
@@ -23,6 +21,7 @@ from .models import (
     VoteMethod,
 )
 from .rro import MOTION_TYPE_LABELS, STAGE_LABELS
+from .utils import now_eastern
 
 
 def _next_sequence(meeting_id: int) -> int:
@@ -45,7 +44,7 @@ def _append(
     entry = MinutesEntry(
         meeting_id=meeting.id,
         sequence=_next_sequence(meeting.id),
-        timestamp=datetime.utcnow(),
+        timestamp=now_eastern(),
         entry_type=entry_type,
         actor_id=actor.id if actor else None,
         related_motion_id=related_motion.id if related_motion else None,
@@ -64,7 +63,7 @@ def _append(
 
 
 def log_call_to_order(meeting: Meeting, actor: User) -> MinutesEntry:
-    time_str = datetime.utcnow().strftime("%H:%M UTC")
+    time_str = now_eastern().strftime("%I:%M %p ET")
     return _append(
         meeting,
         MinutesEntryType.stage_change,
@@ -194,7 +193,7 @@ def log_chair_note(meeting: Meeting, note: str, actor: User) -> MinutesEntry:
 
 
 def log_adjournment(meeting: Meeting, actor: User) -> MinutesEntry:
-    time_str = datetime.utcnow().strftime("%H:%M UTC")
+    time_str = now_eastern().strftime("%I:%M %p ET")
     return _append(
         meeting,
         MinutesEntryType.adjournment,

@@ -8,7 +8,7 @@
     <div class="text-muted">
       {% if meeting.board %}<span class="badge bg-info text-dark">{{ meeting.board.display_name }}</span>{% endif %}
       {{ meeting.meeting_type.value.replace('_', ' ')|title }} &middot;
-      {{ meeting.scheduled_start.strftime('%a %b %d, %Y %H:%M UTC') }} &middot;
+      {{ meeting.scheduled_start.strftime('%a %b %d, %Y %I:%M %p') }} ET &middot;
       {{ meeting.location or 'No location set' }}
     </div>
     <div class="mt-2">{{ status_badge(meeting.status) }}</div>

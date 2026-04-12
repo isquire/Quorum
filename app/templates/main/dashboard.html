@@ -41,7 +41,7 @@
             <a href="{{ url_for('meetings.meeting_detail', meeting_id=m.id) }}">{{ m.title }}</a>
             {{ status_badge(m.status) }}
           </div>
-          <div class="text-muted small">{{ m.scheduled_start.strftime('%a %b %d, %Y %H:%M UTC') }}</div>
+          <div class="text-muted small">{{ m.scheduled_start.strftime('%a %b %d, %Y %I:%M %p') }} ET</div>
         </li>
         {% else %}
         <li class="list-group-item text-muted">No upcoming meetings.</li>

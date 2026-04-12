@@ -3,10 +3,24 @@ from __future__ import annotations
 
 import os
 import uuid
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from flask import current_app
 from werkzeug.utils import secure_filename
+
+# Eastern time zone — used throughout the app for all timestamps.
+EASTERN = ZoneInfo("America/New_York")
+
+
+def now_eastern() -> datetime:
+    """Return current time in US/Eastern as a naive datetime.
+
+    Stored as naive in SQLite but represents Eastern time, not UTC.
+    Automatically handles EST/EDT transitions.
+    """
+    return datetime.now(EASTERN).replace(tzinfo=None)
 
 
 def allowed_upload(filename: str) -> bool:

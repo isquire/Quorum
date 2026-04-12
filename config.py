@@ -26,7 +26,7 @@ class BaseConfig:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
 
-    TIMEZONE = os.environ.get("TIMEZONE", "America/Chicago")
+    TIMEZONE = os.environ.get("TIMEZONE", "America/New_York")
 
     # Church identity — day-to-day UI name vs. legal name on bylaws.
     CHURCH_DISPLAY_NAME = os.environ.get(

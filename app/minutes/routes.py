@@ -1,11 +1,10 @@
-from datetime import datetime
-
 from flask import Response, flash, redirect, render_template, url_for
 from flask_login import current_user, login_required
 
 from ..extensions import db
 from ..models import Meeting, MeetingStatus, Role
 from ..permissions import role_required
+from ..utils import now_eastern
 from . import bp
 
 
@@ -35,7 +34,7 @@ def detail(meeting_id: int):
 @role_required(Role.chair, Role.vice_chair)
 def approve(meeting_id: int):
     meeting = Meeting.query.get_or_404(meeting_id)
-    meeting.minutes_approved_at = datetime.utcnow()
+    meeting.minutes_approved_at = now_eastern()
     meeting.minutes_approved_by_id = current_user.id
     db.session.commit()
     flash("Minutes approved.", "success")
@@ -48,7 +47,7 @@ def export_text(meeting_id: int):
     meeting = Meeting.query.get_or_404(meeting_id)
     lines = [
         f"MINUTES — {meeting.title}",
-        f"Date: {meeting.scheduled_start.strftime('%Y-%m-%d %H:%M UTC')}",
+        f"Date: {meeting.scheduled_start.strftime('%Y-%m-%d %I:%M %p')} ET",
         f"Type: {meeting.meeting_type.value}",
         f"Location: {meeting.location or 'N/A'}",
         "",

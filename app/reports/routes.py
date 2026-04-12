@@ -1,11 +1,10 @@
-from datetime import datetime
-
 from flask import abort, flash, redirect, render_template, url_for
 from flask_login import current_user, login_required
 
 from ..extensions import db
 from ..models import Meeting, Report, ReportType, Role
 from ..permissions import role_required
+from ..utils import now_eastern
 from . import bp
 from .forms import ReportForm
 
@@ -52,7 +51,7 @@ def create_report():
             meeting_id=meeting_id,
             period_start=form.period_start.data,
             period_end=form.period_end.data,
-            submitted_at=datetime.utcnow(),
+            submitted_at=now_eastern(),
         )
         db.session.add(report)
         db.session.commit()
@@ -73,7 +72,7 @@ def detail(report_id: int):
 @role_required(Role.chair, Role.vice_chair)
 def approve(report_id: int):
     report = Report.query.get_or_404(report_id)
-    report.approved_at = datetime.utcnow()
+    report.approved_at = now_eastern()
     report.approved_by_id = current_user.id
     db.session.commit()
     flash("Report approved.", "success")

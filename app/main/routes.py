@@ -1,16 +1,17 @@
-from datetime import date, datetime
+from datetime import date
 
 from flask import render_template
 from flask_login import login_required
 
 from ..models import Meeting, MeetingStatus, Report, ServiceTerm, TermStatus
+from ..utils import now_eastern
 from . import bp
 
 
 @bp.route("/")
 @login_required
 def dashboard():
-    now = datetime.utcnow()
+    now = now_eastern()
     upcoming = (
         Meeting.query.filter(
             Meeting.status.in_(

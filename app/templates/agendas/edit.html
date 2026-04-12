@@ -3,7 +3,7 @@
 {% block title %}Agenda: {{ meeting.title }}{% endblock %}
 {% block content %}
 <h1 class="h3">Agenda &mdash; {{ meeting.title }}</h1>
-<p class="text-muted">{{ meeting.scheduled_start.strftime('%Y-%m-%d %H:%M UTC') }}</p>
+<p class="text-muted">{{ meeting.scheduled_start.strftime('%Y-%m-%d %I:%M %p') }} ET</p>
 
 <div class="row g-4">
   <div class="col-md-7">

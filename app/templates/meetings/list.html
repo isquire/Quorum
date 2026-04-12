@@ -18,7 +18,7 @@
     <tr>
       <td><a href="{{ url_for('meetings.meeting_detail', meeting_id=m.id) }}">{{ m.title }}</a></td>
       <td>{{ m.meeting_type.value }}</td>
-      <td>{{ m.scheduled_start.strftime('%Y-%m-%d %H:%M UTC') }}</td>
+      <td>{{ m.scheduled_start.strftime('%Y-%m-%d %I:%M %p') }} ET</td>
       <td>{{ status_badge(m.status) }}</td>
       <td class="text-end">
         {% if m.status.value == 'in_progress' %}

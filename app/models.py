@@ -10,6 +10,7 @@ from sqlalchemy import CheckConstraint, UniqueConstraint
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .extensions import db, login_manager
+from .utils import now_eastern
 
 
 # ---------------------------------------------------------------------------
@@ -198,13 +199,13 @@ TERM_RULES: dict[str, dict] = {
 
 class TimestampMixin:
     created_at = db.Column(
-        db.DateTime, nullable=False, default=datetime.utcnow
+        db.DateTime, nullable=False, default=now_eastern
     )
     updated_at = db.Column(
         db.DateTime,
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=now_eastern,
+        onupdate=now_eastern,
     )
 
 
@@ -948,7 +949,7 @@ class Vote(TimestampMixin, db.Model):
     choice = db.Column(
         db.Enum(VoteChoice, native_enum=False), nullable=False
     )
-    cast_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    cast_at = db.Column(db.DateTime, nullable=False, default=now_eastern)
 
     motion = db.relationship("Motion", back_populates="votes")
     user = db.relationship("User", back_populates="votes")
@@ -962,7 +963,7 @@ class MinutesEntry(TimestampMixin, db.Model):
         db.Integer, db.ForeignKey("meetings.id"), nullable=False
     )
     sequence = db.Column(db.Integer, nullable=False)
-    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, nullable=False, default=now_eastern)
     entry_type = db.Column(
         db.Enum(MinutesEntryType, native_enum=False), nullable=False
     )
@@ -1005,7 +1006,7 @@ class Report(TimestampMixin, db.Model):
     period_start = db.Column(db.Date, nullable=True)
     period_end = db.Column(db.Date, nullable=True)
     submitted_at = db.Column(
-        db.DateTime, nullable=False, default=datetime.utcnow
+        db.DateTime, nullable=False, default=now_eastern
     )
     approved_at = db.Column(db.DateTime, nullable=True)
     approved_by_id = db.Column(
@@ -1045,7 +1046,7 @@ class Attachment(TimestampMixin, db.Model):
     uploaded_by_id = db.Column(
         db.Integer, db.ForeignKey("users.id"), nullable=False
     )
-    uploaded_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    uploaded_at = db.Column(db.DateTime, nullable=False, default=now_eastern)
 
     meeting_id = db.Column(
         db.Integer, db.ForeignKey("meetings.id"), nullable=True

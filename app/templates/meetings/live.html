@@ -10,7 +10,7 @@
     <div class="text-muted small">
       {{ stage_labels[meeting.current_stage] }}
       {% if meeting.called_to_order_at %}
-        &middot; called to order at {{ meeting.called_to_order_at.strftime('%H:%M UTC') }}
+        &middot; called to order at {{ meeting.called_to_order_at.strftime('%I:%M %p') }} ET
       {% endif %}
       {% if meeting.acting_chair %}
         &middot; Acting chair: {{ meeting.acting_chair.full_name }}

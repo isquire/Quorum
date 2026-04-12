@@ -5,7 +5,7 @@
   <div>
     <h1 class="h3 mb-1">Minutes &mdash; {{ meeting.title }}</h1>
     <div class="text-muted">
-      {{ meeting.scheduled_start.strftime('%a %b %d, %Y %H:%M UTC') }} &middot;
+      {{ meeting.scheduled_start.strftime('%a %b %d, %Y %I:%M %p') }} ET &middot;
       {{ meeting.location or 'No location' }}
     </div>
     <div class="mt-2">
