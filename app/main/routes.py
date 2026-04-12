@@ -46,3 +46,9 @@ def dashboard():
         recent=recent,
         pending_reports=pending_reports,
     )
+
+
+@bp.route("/guide")
+@login_required
+def guide():
+    return render_template("main/guide.html")

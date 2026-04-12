@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+{% block title %}Guide{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-lg-3 d-none d-lg-block">
+    <div class="position-sticky" style="top: 1rem;">
+      <div class="card shadow-sm">
+        <div class="card-header">On this page</div>
+        <nav class="list-group list-group-flush small">
+          <a class="list-group-item list-group-item-action" href="#overview">1. What this app does</a>
+          <a class="list-group-item list-group-item-action" href="#roles">2. Roles &amp; who does what</a>
+          <a class="list-group-item list-group-item-action" href="#before">3. Before the meeting</a>
+          <a class="list-group-item list-group-item-action" href="#starting">4. Starting the meeting</a>
+          <a class="list-group-item list-group-item-action" href="#agenda-flow">5. Working through the agenda</a>
+          <a class="list-group-item list-group-item-action" href="#motions">6. Making &amp; voting on motions</a>
+          <a class="list-group-item list-group-item-action" href="#amendments">7. Amendments</a>
+          <a class="list-group-item list-group-item-action" href="#adjourn">8. Adjournment</a>
+          <a class="list-group-item list-group-item-action" href="#after">9. After the meeting</a>
+          <a class="list-group-item list-group-item-action" href="#reports">10. Reports &amp; attachments</a>
+          <a class="list-group-item list-group-item-action" href="#tips">11. Tips &amp; pitfalls</a>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-9">
+    <div class="mb-4">
+      <h1 class="h2">How to use Quorum</h1>
+      <p class="lead text-muted">
+        A step-by-step work process for running Connection Church Board of
+        Administration meetings under Robert&rsquo;s Rules of Order.
+      </p>
+    </div>
+
+    <section id="overview" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">1. What this app does</h2>
+      <p>
+        Quorum is the board&rsquo;s shared cockpit for meetings. It keeps a
+        single, accurate record of every parliamentary action &mdash; roll
+        call, agenda progress, motions, votes, reports, attachments &mdash;
+        so no one is scribbling minutes in parallel and no one has to argue
+        later about what actually happened.
+      </p>
+      <p class="mb-0">
+        The headline promise: <strong>if you run the meeting through the app,
+        the minutes are written automatically.</strong> Every click on the live
+        meeting screen produces a timestamped minutes entry. You review and
+        approve those at the next meeting.
+      </p>
+    </section>
+
+    <section id="roles" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">2. Roles &amp; who does what</h2>
+      <p>Quorum has six roles. An admin creates every user and assigns a role.</p>
+      <div class="table-responsive">
+        <table class="table table-sm align-top">
+          <thead>
+            <tr>
+              <th style="width: 140px;">Role</th>
+              <th>What they can do</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge bg-dark">admin</span></td>
+              <td>Create, edit, deactivate, and reset passwords for any user. Admins can do everything a chair can do.</td>
+            </tr>
+            <tr>
+              <td><span class="badge bg-primary">chair</span></td>
+              <td>Schedule meetings, build agendas, drive the live meeting (call to order, advance stage, open and close votes, adjourn), approve prior minutes and reports.</td>
+            </tr>
+            <tr>
+              <td><span class="badge bg-primary">vice_chair</span></td>
+              <td>Same live-meeting powers as the chair &mdash; steps in when the chair is absent.</td>
+            </tr>
+            <tr>
+              <td><span class="badge bg-info text-dark">secretary</span></td>
+              <td>Takes roll call (marking attendance), adds free-form chair/secretary notes to the minutes timeline, edits minutes entries before chair approval.</td>
+            </tr>
+            <tr>
+              <td><span class="badge bg-success">treasurer</span></td>
+              <td>Submits treasurer reports. Votes as a member.</td>
+            </tr>
+            <tr>
+              <td><span class="badge bg-secondary">member</span></td>
+              <td>Voting board member. Can make motions, second motions, and cast votes when voting is open.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted small mb-0">
+        A user is &ldquo;voting&rdquo; if their profile has <em>Voting member</em>
+        checked. Admins may be non-voting (e.g. the pastor&rsquo;s assistant).
+      </p>
+    </section>
+
+    <section id="before" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">3. Before the meeting</h2>
+      <ol>
+        <li>
+          <strong>Chair schedules the meeting.</strong>
+          <em>Meetings &rarr; New meeting</em>. Pick the meeting type (regular,
+          special, annual, emergency), date/time, and location. Save.
+        </li>
+        <li>
+          <strong>Chair (or secretary) builds the agenda.</strong> Open the
+          meeting and use the agenda editor to add items. Each item gets a
+          category that maps to the Robert&rsquo;s Rules order of business:
+          <ul>
+            <li><em>Minutes approval</em> &mdash; approve last meeting&rsquo;s minutes.</li>
+            <li><em>Report</em> &mdash; one per committee / treasurer report.</li>
+            <li><em>Unfinished business</em> &mdash; carried over from last time.</li>
+            <li><em>New business</em> &mdash; anything new requiring board action.</li>
+            <li><em>Announcement</em> &mdash; FYI items, no vote needed.</li>
+          </ul>
+          Drag items to reorder them. Assign a presenter if someone specific is walking the board through it.
+        </li>
+        <li>
+          <strong>Attach background documents.</strong> Upload the treasurer&rsquo;s
+          spreadsheet, the proposed budget PDF, or any supporting docs and
+          attach them to the meeting or a specific agenda item. Anyone signed
+          in can download; nothing is ever served as a public static file.
+        </li>
+        <li>
+          <strong>Treasurer &amp; committees file their reports.</strong>
+          <em>Reports &rarr; New report</em>. Write the report in markdown,
+          link it to the meeting, and submit. The chair will approve it
+          during the meeting.
+        </li>
+      </ol>
+    </section>
+
+    <section id="starting" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">4. Starting the meeting</h2>
+      <ol>
+        <li>
+          Everyone logs in and opens the meeting page. The chair clicks
+          <strong>Start meeting</strong> &rarr; status becomes
+          <em>in progress</em>, stage becomes <em>Call to order</em>, and the
+          minutes timeline gets its first entry: &ldquo;Chair called the
+          meeting to order.&rdquo;
+        </li>
+        <li>
+          Chair (or vice-chair) clicks <strong>Advance stage</strong> to move to
+          <em>Roll call</em>.
+        </li>
+        <li>
+          The secretary works down the attendance list, toggling each member
+          <em>Present</em> as they arrive. The <strong>Quorum badge</strong> in
+          the top-left turns <span class="badge bg-success">green</span> the
+          instant the threshold is met (more than half of voting members).
+          If you don&rsquo;t have quorum you cannot conduct business &mdash;
+          the board can only agree to recess or adjourn.
+        </li>
+        <li>
+          Once quorum is met, chair advances to <em>Minutes approval</em> and
+          approves the prior meeting&rsquo;s minutes.
+        </li>
+      </ol>
+    </section>
+
+    <section id="agenda-flow" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">5. Working through the agenda</h2>
+      <p>
+        The chair advances through the order of business one stage at a time.
+        Within each stage, click an agenda item in the left pane to make it
+        the &ldquo;current item&rdquo; &mdash; the minutes timeline records
+        the transition, and any motion made while that item is current is
+        linked to it.
+      </p>
+      <ul>
+        <li><strong>Reports:</strong> the presenter walks the board through their report (which is already filed in the app). Chair opens the floor for questions.</li>
+        <li><strong>Unfinished / new business:</strong> chair invites motions on each item. This is where most of the action happens.</li>
+        <li><strong>Announcements:</strong> FYI only. No votes.</li>
+      </ul>
+      <p class="mb-0">
+        You cannot advance out of a business stage while a motion is still on
+        the floor &mdash; Quorum will block the click and flash a warning.
+        Dispose of the motion first (vote, withdraw, or table).
+      </p>
+    </section>
+
+    <section id="motions" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">6. Making &amp; voting on motions</h2>
+      <p>This is the heart of Robert&rsquo;s Rules. Quorum walks every motion through the same lifecycle:</p>
+      <ol>
+        <li>
+          <strong>Make.</strong> Any voting member clicks <em>Make a motion</em>,
+          types the motion text (&ldquo;I move that we&hellip;&rdquo;), and
+          submits. Status: <span class="badge bg-secondary">proposed</span>.
+        </li>
+        <li>
+          <strong>Second.</strong> A <em>different</em> voting member clicks
+          <em>Second</em>. A maker cannot second their own motion &mdash;
+          Quorum enforces this. Status: <span class="badge bg-info text-dark">seconded</span>.
+        </li>
+        <li>
+          <strong>Debate.</strong> The chair recognizes members to speak for
+          or against. There&rsquo;s no timer in the app; the chair runs the
+          debate verbally.
+        </li>
+        <li>
+          <strong>Open vote.</strong> Chair clicks <em>Open vote</em>. Status:
+          <span class="badge bg-warning text-dark">voting</span>.
+          Every voting member now sees Yes / No / Abstain buttons.
+        </li>
+        <li>
+          <strong>Cast votes.</strong> Members click their choice. The live
+          tally updates in real time. Members can change their vote up until
+          the chair closes the vote.
+        </li>
+        <li>
+          <strong>Close vote.</strong> Chair clicks <em>Close vote</em>. The
+          result is computed (simple or two-thirds majority, depending on the
+          motion type &mdash; abstentions never count toward the total) and
+          written to the minutes as: <em>&ldquo;Motion by A. Smith to X &mdash;
+          PASSED 4&ndash;1&ndash;1.&rdquo;</em> Status:
+          <span class="badge bg-success">passed</span> or
+          <span class="badge bg-danger">failed</span>.
+        </li>
+      </ol>
+      <p class="small text-muted mb-0">
+        The chair votes only to make or break a tie, per Robert&rsquo;s Rules.
+        The app lets the chair vote any time &mdash; abstain unless breaking
+        a tie.
+      </p>
+    </section>
+
+    <section id="amendments" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">7. Amendments</h2>
+      <p>
+        Amendments are nested under the main motion. To propose one:
+      </p>
+      <ol>
+        <li>A member selects <em>Amendment</em> from the motion-type dropdown while a main motion is on the floor.</li>
+        <li>The amendment goes through its own propose &rarr; second &rarr; debate &rarr; vote cycle.</li>
+        <li>
+          Robert&rsquo;s Rules says <strong>the innermost amendment is voted first</strong>.
+          Quorum handles this automatically &mdash; the motion card always
+          shows the deepest unresolved amendment as the active motion. Once
+          it&rsquo;s voted on, the app pops back to the parent.
+        </li>
+        <li>
+          After all amendments are resolved, the board votes on the (possibly
+          amended) main motion.
+        </li>
+      </ol>
+      <p class="mb-0">
+        Withdrawing: the maker of a motion may withdraw it before the vote
+        opens. Withdrawn motions are kept in the minutes with a
+        <em>withdrawn</em> marker.
+      </p>
+    </section>
+
+    <section id="adjourn" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">8. Adjournment</h2>
+      <ol>
+        <li>Chair advances through the remaining stages until reaching <em>Announcements</em>.</li>
+        <li>
+          A member moves to adjourn and another seconds. This can be handled
+          as a formal motion or, in practice for a board meeting, the chair
+          simply clicks <strong>Adjourn</strong>.
+        </li>
+        <li>
+          Status becomes <em>adjourned</em>, the adjournment timestamp is
+          logged, and the meeting is frozen on the live page. The minutes
+          timeline is the final record of what happened.
+        </li>
+      </ol>
+    </section>
+
+    <section id="after" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">9. After the meeting</h2>
+      <ol>
+        <li>
+          <strong>Secretary reviews the minutes.</strong>
+          <em>Minutes &rarr; [meeting]</em>. The timeline is reverse
+          chronological; every entry can be edited to fix wording until the
+          chair approves them. Edited entries are flagged.
+        </li>
+        <li>
+          <strong>Export as plain text.</strong> Use the
+          <em>Export</em> button to download a <code>.txt</code> copy for
+          distribution or filing.
+        </li>
+        <li>
+          <strong>Chair approves at the next meeting.</strong> During the
+          next meeting&rsquo;s <em>Minutes approval</em> stage, the chair
+          clicks <em>Approve minutes</em>. After approval the timeline is
+          locked &mdash; the record is now the board&rsquo;s official account.
+        </li>
+      </ol>
+    </section>
+
+    <section id="reports" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">10. Reports &amp; attachments</h2>
+      <ul>
+        <li>
+          <strong>Treasurer reports</strong> and <strong>committee reports</strong>
+          live under <em>Reports</em>. Create one, write markdown, attach any
+          backing documents, link it to the meeting it&rsquo;ll be presented
+          at, and submit.
+        </li>
+        <li>
+          <strong>Chair approves</strong> each report (typically during the
+          report&rsquo;s agenda item).
+        </li>
+        <li>
+          <strong>Attachments</strong> can be attached to a meeting, an
+          agenda item, or a report. Allowed types: PDF, Word, Excel,
+          PowerPoint, plain text / markdown, CSV, and images. Max size: 25 MB.
+        </li>
+        <li>
+          Every download is auth-gated. Logged-out users cannot fetch files
+          even if they have the URL.
+        </li>
+      </ul>
+    </section>
+
+    <section id="tips" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">11. Tips &amp; pitfalls</h2>
+      <ul>
+        <li><strong>One browser per person.</strong> Every attending board member should have Quorum open on their own device so they can second motions and cast their own votes.</li>
+        <li><strong>Don&rsquo;t forget to open the vote.</strong> A common slip-up: chair discusses a motion and then tries to advance without opening the vote. The motion stays on the floor and blocks advancement.</li>
+        <li><strong>Abstentions don&rsquo;t count in the denominator.</strong> A motion passes simple majority if <em>yes &gt; no</em>; two-thirds if <em>yes &times; 3 &ge; (yes + no) &times; 2</em>. Abstentions are recorded but don&rsquo;t affect the math.</li>
+        <li><strong>Use chair/secretary notes</strong> for anything the app can&rsquo;t capture structurally (&ldquo;Pastor joined by phone at 7:18&rdquo;). They become timestamped minutes entries.</li>
+        <li><strong>Fix wording before approval.</strong> The secretary can edit any minutes entry until the chair approves them at the next meeting. After approval, the record is frozen.</li>
+        <li><strong>If the quorum badge is red, stop.</strong> Robert&rsquo;s Rules does not let you conduct substantive business without quorum. You can recess, set a future date, or adjourn.</li>
+      </ul>
+    </section>
+
+    <div class="alert alert-secondary small">
+      Questions or edits to this guide? Ask an admin &mdash; it lives in
+      <code>app/templates/main/guide.html</code> and can be edited like any
+      other template.
+    </div>
+  </div>
+</div>
+{% endblock %}
