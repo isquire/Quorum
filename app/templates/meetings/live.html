@@ -4,7 +4,9 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
-    <h1 class="h4 mb-1">{{ meeting.title }}</h1>
+    <h1 class="h4 mb-1">{{ meeting.title }}
+      {% if meeting.board %}<span class="badge bg-info text-dark small">{{ meeting.board.display_name }}</span>{% endif %}
+    </h1>
     <div class="text-muted small">
       {{ stage_labels[meeting.current_stage] }}
       {% if meeting.called_to_order_at %}
@@ -74,7 +76,7 @@
             {{ item.title }}
             <div class="text-muted">{{ item.category.value.replace('_',' ') }}</div>
           </div>
-          {% if current_user.role.value in ['chair', 'vice_chair', 'admin'] %}
+          {% if current_user.role.value in ['chair', 'vice_chair', 'admin', 'pastor'] %}
           <form method="post" action="{{ url_for('live.set_agenda_item', meeting_id=meeting.id, item_id=item.id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <button class="btn btn-sm btn-outline-primary">Take up</button>

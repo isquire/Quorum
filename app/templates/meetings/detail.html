@@ -6,14 +6,15 @@
   <div>
     <h1 class="h3 mb-1">{{ meeting.title }}</h1>
     <div class="text-muted">
-      {{ meeting.meeting_type.value|title }} &middot;
+      {% if meeting.board %}<span class="badge bg-info text-dark">{{ meeting.board.display_name }}</span>{% endif %}
+      {{ meeting.meeting_type.value.replace('_', ' ')|title }} &middot;
       {{ meeting.scheduled_start.strftime('%a %b %d, %Y %H:%M UTC') }} &middot;
       {{ meeting.location or 'No location set' }}
     </div>
     <div class="mt-2">{{ status_badge(meeting.status) }}</div>
   </div>
   <div>
-    {% if current_user.role.value in ['chair', 'vice_chair', 'admin'] and meeting.status.value == 'scheduled' %}
+    {% if current_user.role.value in ['chair', 'vice_chair', 'admin', 'pastor'] and meeting.status.value == 'scheduled' %}
       <form method="post" action="{{ url_for('live.call_to_order', meeting_id=meeting.id) }}" class="d-inline">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <button class="btn btn-success">Start meeting</button>
@@ -22,7 +23,7 @@
     {% if meeting.status.value == 'in_progress' %}
       <a class="btn btn-success" href="{{ url_for('live.live', meeting_id=meeting.id) }}">Join live</a>
     {% endif %}
-    {% if current_user.role.value in ['chair', 'vice_chair', 'admin'] and meeting.status.value == 'scheduled' %}
+    {% if current_user.role.value in ['chair', 'vice_chair', 'admin', 'pastor'] and meeting.status.value == 'scheduled' %}
       <a class="btn btn-outline-secondary" href="{{ url_for('meetings.edit_meeting', meeting_id=meeting.id) }}">Edit</a>
     {% endif %}
   </div>
@@ -33,7 +34,7 @@
     <div class="card shadow-sm mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Agenda</span>
-        {% if current_user.role.value in ['chair', 'vice_chair', 'secretary', 'admin'] %}
+        {% if current_user.role.value in ['chair', 'vice_chair', 'secretary', 'admin', 'pastor'] %}
         <a class="btn btn-sm btn-outline-primary" href="{{ url_for('agendas.view_agenda', meeting_id=meeting.id) }}">Edit agenda</a>
         {% endif %}
       </div>

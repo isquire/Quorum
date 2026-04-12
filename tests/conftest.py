@@ -8,12 +8,16 @@ import pytest
 from app import create_app
 from app.extensions import db as _db
 from app.models import (
+    Board,
+    BoardMembership,
+    BoardRole,
     Meeting,
     MeetingAttendance,
     MeetingStatus,
     MeetingType,
     Role,
     User,
+    seed_boards,
 )
 
 
@@ -22,6 +26,8 @@ def app():
     app = create_app("testing")
     with app.app_context():
         _db.create_all()
+        seed_boards()
+        _db.session.commit()
         yield app
         _db.session.remove()
         _db.drop_all()
@@ -103,9 +109,25 @@ def members(make_user):
 
 
 @pytest.fixture()
-def meeting(db, chair, members):
+def board_of_admin(db):
+    return Board.query.filter_by(slug="board_of_administration").one()
+
+
+@pytest.fixture()
+def board_of_deacons(db):
+    return Board.query.filter_by(slug="board_of_deacons").one()
+
+
+@pytest.fixture()
+def assembly_board(db):
+    return Board.query.filter_by(slug="assembly").one()
+
+
+@pytest.fixture()
+def meeting(db, chair, members, board_of_admin):
     m = Meeting(
         title="Test meeting",
+        board_id=board_of_admin.id,
         meeting_type=MeetingType.regular,
         scheduled_start=datetime.utcnow() + timedelta(hours=1),
         location="Main hall",

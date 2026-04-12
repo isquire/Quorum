@@ -20,14 +20,22 @@ from ..models import (
 )
 
 MEETING_TYPE_CHOICES = [
-    (MeetingType.regular.value, "Regular"),
-    (MeetingType.special.value, "Special"),
+    (MeetingType.regular.value, "Regular board meeting"),
+    (MeetingType.special.value, "Special board meeting"),
     (MeetingType.annual.value, "Annual"),
     (MeetingType.emergency.value, "Emergency"),
+    (MeetingType.annual_business.value, "Annual business (assembly)"),
+    (MeetingType.special_business.value, "Special business (assembly)"),
 ]
 
 
 class MeetingForm(FlaskForm):
+    board_id = SelectField(
+        "Board / body",
+        choices=[],
+        validators=[DataRequired()],
+        coerce=int,
+    )
     title = StringField("Title", validators=[DataRequired()])
     meeting_type = SelectField(
         "Type", choices=MEETING_TYPE_CHOICES, validators=[DataRequired()]

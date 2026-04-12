@@ -18,7 +18,8 @@
           <a class="list-group-item list-group-item-action" href="#after">9. After the meeting</a>
           <a class="list-group-item list-group-item-action" href="#reports">10. Reports &amp; attachments</a>
           <a class="list-group-item list-group-item-action" href="#quorum-rules">11. Quorum rules by body</a>
-          <a class="list-group-item list-group-item-action" href="#tips">12. Tips &amp; pitfalls</a>
+          <a class="list-group-item list-group-item-action" href="#boards">12. The two-board model</a>
+          <a class="list-group-item list-group-item-action" href="#tips">13. Tips &amp; pitfalls</a>
         </nav>
       </div>
     </div>
@@ -52,39 +53,47 @@
 
     <section id="roles" class="mb-5">
       <h2 class="h4 border-bottom pb-2">2. Roles &amp; who does what</h2>
-      <p>Quorum has six roles. An admin creates every user and assigns a role.</p>
+      <p>Quorum has roles aligned with the church&rsquo;s Bylaws (Art.&nbsp;VII). An admin creates every user and assigns a role.</p>
       <div class="table-responsive">
         <table class="table table-sm align-top">
           <thead>
             <tr>
-              <th style="width: 140px;">Role</th>
+              <th style="width: 160px;">Role</th>
               <th>What they can do</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><span class="badge bg-dark">admin</span></td>
-              <td>Create, edit, deactivate, and reset passwords for any user. Admins can do everything a chair can do.</td>
+              <td>Create, edit, deactivate, and reset passwords for any user. Admins can do everything a pastor can do.</td>
             </tr>
             <tr>
-              <td><span class="badge bg-primary">chair</span></td>
-              <td>Schedule meetings, build agendas, drive the live meeting (call to order, advance stage, open and close votes, adjourn), approve prior minutes and reports.</td>
+              <td><span class="badge bg-primary">pastor</span></td>
+              <td>President of the corporation. Chairs all meetings of the assembly, Board of Deacons, and Board of Administration. Schedules meetings, builds agendas, drives the live meeting, approves minutes and reports.</td>
             </tr>
             <tr>
-              <td><span class="badge bg-primary">vice_chair</span></td>
-              <td>Same live-meeting powers as the chair &mdash; steps in when the chair is absent.</td>
+              <td><span class="badge bg-primary">deacon</span></td>
+              <td>Member of the Board of Deacons and Board of Administration. Advisory to the Pastor, examines membership applicants. Votes on all board matters.</td>
+            </tr>
+            <tr>
+              <td><span class="badge bg-primary">trustee</span></td>
+              <td>Member of the Board of Administration only. Custodian of church property. Votes on Board of Admin matters.</td>
             </tr>
             <tr>
               <td><span class="badge bg-info text-dark">secretary</span></td>
-              <td>Takes roll call (marking attendance), adds free-form chair/secretary notes to the minutes timeline, edits minutes entries before chair approval.</td>
+              <td>Keeps minutes of all official meetings, custodian of legal documents, maintains the membership roll. Takes roll call, adds notes to the minutes timeline, edits minutes entries before approval.</td>
             </tr>
             <tr>
               <td><span class="badge bg-success">treasurer</span></td>
-              <td>Submits treasurer reports. Votes as a member.</td>
+              <td>Handles all church finances, submits treasurer reports. Serves both boards.</td>
+            </tr>
+            <tr>
+              <td><span class="badge bg-success">assistant_treasurer</span></td>
+              <td>Performs the Treasurer&rsquo;s duties in their absence. Same permissions as Treasurer.</td>
             </tr>
             <tr>
               <td><span class="badge bg-secondary">member</span></td>
-              <td>Voting board member. Can make motions, second motions, and cast votes when voting is open.</td>
+              <td>General church member. Can make motions, second motions, and cast votes when voting is open at assembly meetings.</td>
             </tr>
           </tbody>
         </table>
@@ -92,6 +101,8 @@
       <p class="text-muted small mb-0">
         A user is &ldquo;voting&rdquo; if their profile has <em>Voting member</em>
         checked. Admins may be non-voting (e.g. the pastor&rsquo;s assistant).
+        Legacy roles <em>chair</em> and <em>vice_chair</em> are still recognized
+        and carry the same privileges as <em>pastor</em>.
       </p>
     </section>
 
@@ -369,8 +380,50 @@
       </p>
     </section>
 
+    <section id="boards" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">12. The two-board model</h2>
+      <p>
+        Per the church&rsquo;s Constitution (Art.&nbsp;VII &sect;2), governance is
+        split across two boards and the general assembly:
+      </p>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Body</th><th>Members</th><th>Chair</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Board of Deacons</strong></td>
+              <td>Pastor + &ge;3 Deacons</td>
+              <td>Pastor</td>
+            </tr>
+            <tr>
+              <td><strong>Board of Administration</strong></td>
+              <td>All Deacons + &ge;3 Trustees + Secretary + Treasurer + Asst. Treasurer</td>
+              <td>Pastor</td>
+            </tr>
+            <tr>
+              <td><strong>Assembly</strong></td>
+              <td>All active church members</td>
+              <td>Pastor</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Every Deacon is automatically a member of the Board of Administration.
+        Trustees sit only on the Board of Administration.
+        When creating a meeting, choose the correct board from the dropdown &mdash;
+        attendance rolls and quorum calculations are scoped accordingly.
+      </p>
+      <p class="mb-0">
+        <strong>Family restriction:</strong> Constitution Art.&nbsp;VII &sect;2.5
+        states that no two members of the same immediate family may serve on the
+        same board. The admin panel tracks this via the &ldquo;Family group&rdquo;
+        field on each user.
+      </p>
+    </section>
+
     <section id="tips" class="mb-5">
-      <h2 class="h4 border-bottom pb-2">12. Tips &amp; pitfalls</h2>
+      <h2 class="h4 border-bottom pb-2">13. Tips &amp; pitfalls</h2>
       <ul>
         <li><strong>One browser per person.</strong> Every attending board member should have Quorum open on their own device so they can second motions and cast their own votes.</li>
         <li><strong>Don&rsquo;t forget to open the vote.</strong> A common slip-up: chair discusses a motion and then tries to advance without opening the vote. The motion stays on the floor and blocks advancement.</li>

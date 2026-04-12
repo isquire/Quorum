@@ -30,6 +30,7 @@ def create_user():
                 is_voting_member=form.is_voting_member.data,
                 is_active=form.is_active.data,
                 is_active_member=form.is_active_member.data,
+                family_group=(form.family_group.data or "").strip() or None,
                 committees=(form.committees.data or "").strip(),
             )
             user.set_password(form.password.data)
@@ -53,6 +54,7 @@ def edit_user(user_id: int):
         user.is_voting_member = form.is_voting_member.data
         user.is_active = form.is_active.data
         user.is_active_member = form.is_active_member.data
+        user.family_group = (form.family_group.data or "").strip() or None
         user.committees = (form.committees.data or "").strip()
         db.session.commit()
         flash("User updated.", "success")

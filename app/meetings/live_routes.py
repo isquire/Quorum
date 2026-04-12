@@ -35,7 +35,7 @@ from ..models import (
     VoteChoice,
     VoteMethod,
 )
-from ..permissions import role_required, voting_member_required
+from ..permissions import CHAIR_ROLES, SECRETARY_ROLES, role_required, voting_member_required
 from ..rro import (
     MAIN_MOTION_STAGES,
     available_motion_types,
@@ -57,17 +57,12 @@ def _get_meeting(meeting_id: int) -> Meeting:
 
 
 def _require_chair_or_vice(meeting: Meeting) -> None:
-    if current_user.role not in {Role.admin, Role.chair, Role.vice_chair}:
+    if current_user.role.value not in CHAIR_ROLES:
         abort(403)
 
 
 def _require_secretary_or_chair(meeting: Meeting) -> None:
-    if current_user.role not in {
-        Role.admin,
-        Role.chair,
-        Role.vice_chair,
-        Role.secretary,
-    }:
+    if current_user.role.value not in SECRETARY_ROLES:
         abort(403)
 
 
@@ -125,11 +120,7 @@ def live(meeting_id: int):
             motion_id=active_motion.id, user_id=current_user.id
         ).first()
 
-    is_chair = current_user.role in {
-        Role.admin,
-        Role.chair,
-        Role.vice_chair,
-    }
+    is_chair = current_user.role.value in CHAIR_ROLES
 
     template = "meetings/live.html" if is_chair else "meetings/live_member.html"
     return render_template(

@@ -79,6 +79,7 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # Template globals.
     from .rro import STAGE_LABELS, MOTION_TYPE_LABELS
+    from .permissions import CHAIR_ROLES, SECRETARY_ROLES
 
     @app.context_processor
     def _inject_globals():
@@ -96,6 +97,8 @@ def create_app(config_name: str | None = None) -> Flask:
             ),
             "stage_labels": STAGE_LABELS,
             "motion_type_labels": MOTION_TYPE_LABELS,
+            "chair_roles": CHAIR_ROLES,
+            "secretary_roles": SECRETARY_ROLES,
         }
 
     return app

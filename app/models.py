@@ -24,6 +24,22 @@ class Role(str, enum.Enum):
     secretary = "secretary"
     treasurer = "treasurer"
     member = "member"
+    # Bylaws-aligned roles (Phase B)
+    pastor = "pastor"
+    deacon = "deacon"
+    trustee = "trustee"
+    assistant_treasurer = "assistant_treasurer"
+
+
+class BoardRole(str, enum.Enum):
+    """Role a user holds on a specific board."""
+    pastor = "pastor"
+    deacon = "deacon"
+    trustee = "trustee"
+    secretary = "secretary"
+    treasurer = "treasurer"
+    assistant_treasurer = "assistant_treasurer"
+    member = "member"
 
 
 class MeetingType(str, enum.Enum):
@@ -185,11 +201,17 @@ class User(UserMixin, TimestampMixin, db.Model):
     # Bylaws Art III §5 — tracks active membership for quorum denominator.
     # Secretary toggles this during membership roll revisions.
     is_active_member = db.Column(db.Boolean, nullable=False, default=True)
+    # Constitution Art VII §2.5 — no two members of the same immediate
+    # family may serve on the same board.  Free-text grouping field.
+    family_group = db.Column(db.String(100), nullable=True)
     committees = db.Column(db.String(500), nullable=False, default="")
 
     # Relationships
     attendances = db.relationship(
         "MeetingAttendance", back_populates="user", cascade="all, delete-orphan"
+    )
+    board_memberships = db.relationship(
+        "BoardMembership", back_populates="user", cascade="all, delete-orphan"
     )
     motions_made = db.relationship(
         "Motion", foreign_keys="Motion.maker_id", back_populates="maker"
@@ -229,6 +251,10 @@ class User(UserMixin, TimestampMixin, db.Model):
             Role.vice_chair,
             Role.secretary,
             Role.treasurer,
+            Role.pastor,
+            Role.deacon,
+            Role.trustee,
+            Role.assistant_treasurer,
         }
 
     @property
@@ -244,11 +270,94 @@ def _load_user(user_id: str):  # pragma: no cover - also wired in app factory
     return db.session.get(User, int(user_id))
 
 
+# ---------------------------------------------------------------------------
+# Board governance (Phase B — Bylaws alignment)
+# ---------------------------------------------------------------------------
+
+
+class Board(TimestampMixin, db.Model):
+    """A governing body: Assembly, Board of Deacons, Board of Admin."""
+    __tablename__ = "boards"
+
+    id = db.Column(db.Integer, primary_key=True)
+    slug = db.Column(db.String(50), unique=True, nullable=False)
+    display_name = db.Column(db.String(100), nullable=False)
+
+    memberships = db.relationship(
+        "BoardMembership", back_populates="board", cascade="all, delete-orphan"
+    )
+    meetings = db.relationship("Meeting", back_populates="board")
+
+    @property
+    def voting_member_count(self) -> int:
+        return sum(1 for m in self.memberships if m.is_voting)
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<Board {self.slug}>"
+
+
+class BoardMembership(TimestampMixin, db.Model):
+    """Many-to-many: User <-> Board with a role on that board."""
+    __tablename__ = "board_memberships"
+    __table_args__ = (
+        UniqueConstraint("board_id", "user_id", name="uq_board_membership"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    board_id = db.Column(
+        db.Integer, db.ForeignKey("boards.id"), nullable=False
+    )
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False
+    )
+    role_on_board = db.Column(
+        db.Enum(BoardRole, native_enum=False),
+        nullable=False,
+        default=BoardRole.member,
+    )
+    is_voting = db.Column(db.Boolean, nullable=False, default=True)
+    started_at = db.Column(db.DateTime, nullable=True)
+    ended_at = db.Column(db.DateTime, nullable=True)
+
+    board = db.relationship("Board", back_populates="memberships")
+    user = db.relationship("User", back_populates="board_memberships")
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<BoardMembership board={self.board_id} user={self.user_id}>"
+
+
+def seed_boards() -> list[Board]:
+    """Insert the three canonical boards if they don't exist.
+
+    Called during ``flask create-admin`` and migrations.
+    """
+    slugs = {
+        "assembly": "Assembly",
+        "board_of_deacons": "Board of Deacons",
+        "board_of_administration": "Board of Administration",
+    }
+    boards = []
+    for slug, name in slugs.items():
+        existing = Board.query.filter_by(slug=slug).first()
+        if existing:
+            boards.append(existing)
+        else:
+            b = Board(slug=slug, display_name=name)
+            db.session.add(b)
+            boards.append(b)
+    db.session.flush()
+    return boards
+
+
 class Meeting(TimestampMixin, db.Model):
     __tablename__ = "meetings"
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
+    # Phase B: every meeting belongs to a board (nullable for migration backfill).
+    board_id = db.Column(
+        db.Integer, db.ForeignKey("boards.id"), nullable=True
+    )
     meeting_type = db.Column(
         db.Enum(MeetingType, native_enum=False),
         nullable=False,
@@ -301,6 +410,7 @@ class Meeting(TimestampMixin, db.Model):
     )
 
     # Relationships
+    board = db.relationship("Board", back_populates="meetings")
     created_by = db.relationship("User", foreign_keys=[created_by_id])
     minutes_approved_by = db.relationship(
         "User", foreign_keys=[minutes_approved_by_id]
@@ -365,13 +475,27 @@ class Meeting(TimestampMixin, db.Model):
         }
 
     @property
+    def board_voting_member_count(self) -> int:
+        """Count voting members via board membership if board is set.
+
+        Falls back to the attendance-based count when the board has no
+        memberships yet (backwards compat during Phase B migration).
+        """
+        if self.board is not None:
+            count = self.board.voting_member_count
+            if count > 0:
+                return count
+        return self.voting_member_count
+
+    @property
     def quorum_threshold(self) -> int:
         if self.is_assembly_meeting:
             # Constitution Art VIII §4: one-third of active members.
             active = User.query.filter_by(is_active_member=True).count()
             return math.ceil(active / 3) if active > 0 else 1
-        # Board meetings: majority of voting members in attendance list.
-        return (self.voting_member_count // 2) + 1
+        # Bylaws Art I §§2-3: majority of board members.
+        voters = self.board_voting_member_count
+        return (voters // 2) + 1
 
     @property
     def has_quorum(self) -> bool:

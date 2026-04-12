@@ -7,6 +7,7 @@
     <h1 class="h4 mb-3">{{ 'Edit meeting' if action == 'edit' else 'New meeting' }}</h1>
     <form method="post" class="card card-body shadow-sm">
       {{ form.hidden_tag() }}
+      {{ render_field(form.board_id, help="Which body is this meeting for?") }}
       {{ render_field(form.title) }}
       {{ render_field(form.meeting_type) }}
       {{ render_field(form.scheduled_start) }}

@@ -4,7 +4,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h3">Meetings</h1>
-  {% if current_user.role.value in ['chair', 'vice_chair', 'admin'] %}
+  {% if current_user.role.value in ['chair', 'vice_chair', 'admin', 'pastor'] %}
   <a class="btn btn-primary" href="{{ url_for('meetings.create_meeting') }}">+ New meeting</a>
   {% endif %}
 </div>

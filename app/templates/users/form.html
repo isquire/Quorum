@@ -13,6 +13,7 @@
       {{ render_field(form.is_voting_member) }}
       {{ render_field(form.is_active) }}
       {{ render_field(form.is_active_member, help="Uncheck during membership roll revision per Bylaws Art. III §5") }}
+      {{ render_field(form.family_group, help="For family-restriction check per Constitution Art. VII §2.5 (e.g., \"Smith\")") }}
       {{ render_field(form.committees, help="e.g., finance, outreach") }}
       {% if form.password is defined %}
         {{ render_field(form.password) }}

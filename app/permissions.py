@@ -8,6 +8,18 @@ from flask_login import current_user
 
 from .models import Role
 
+# Roles that carry chair-equivalent privileges (drive meetings, advance
+# stages, open/close votes).  Used both by decorators and template guards.
+CHAIR_ROLES: set[str] = {
+    Role.admin.value,
+    Role.chair.value,
+    Role.vice_chair.value,
+    Role.pastor.value,
+}
+
+# Roles that can take secretary actions (roll call, notes, edit minutes).
+SECRETARY_ROLES: set[str] = CHAIR_ROLES | {Role.secretary.value}
+
 
 def role_required(*roles: Role | str):
     """Abort 403 unless the current user has one of the given roles.

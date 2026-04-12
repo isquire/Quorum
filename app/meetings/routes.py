@@ -5,6 +5,8 @@ from flask_login import current_user, login_required
 
 from ..extensions import db
 from ..models import (
+    Board,
+    BoardMembership,
     Meeting,
     MeetingAttendance,
     MeetingStage,
@@ -19,10 +21,27 @@ from . import bp
 from .forms import MeetingForm, RsvpForm
 
 
+def _populate_board_choices(form: MeetingForm) -> None:
+    """Fill board_id choices from the boards table."""
+    boards = Board.query.order_by(Board.display_name).all()
+    form.board_id.choices = [(b.id, b.display_name) for b in boards]
+
+
 def _ensure_attendance_rows(meeting: Meeting) -> None:
-    """Ensure every active user has an attendance row for a meeting."""
+    """Ensure relevant users have attendance rows for a meeting.
+
+    For board meetings, attendance is limited to board members.
+    For assembly meetings (or meetings without a board), all active users.
+    """
     existing_user_ids = {a.user_id for a in meeting.attendances}
-    users = User.query.filter_by(is_active=True).all()
+    if meeting.board and meeting.board.slug != "assembly":
+        # Board meeting: attendance is board members only.
+        users = [
+            m.user for m in meeting.board.memberships
+            if m.user is not None and m.user.is_active
+        ]
+    else:
+        users = User.query.filter_by(is_active=True).all()
     for user in users:
         if user.id not in existing_user_ids:
             db.session.add(
@@ -64,12 +83,14 @@ def list_meetings():
 
 
 @bp.route("/new", methods=["GET", "POST"])
-@role_required(Role.chair, Role.vice_chair)
+@role_required(Role.chair, Role.vice_chair, Role.pastor)
 def create_meeting():
     form = MeetingForm()
+    _populate_board_choices(form)
     if form.validate_on_submit():
         meeting = Meeting(
             title=form.title.data.strip(),
+            board_id=form.board_id.data,
             meeting_type=MeetingType(form.meeting_type.data),
             scheduled_start=form.scheduled_start.data,
             scheduled_end=form.scheduled_end.data,
@@ -111,16 +132,19 @@ def meeting_detail(meeting_id: int):
 
 
 @bp.route("/<int:meeting_id>/edit", methods=["GET", "POST"])
-@role_required(Role.chair, Role.vice_chair)
+@role_required(Role.chair, Role.vice_chair, Role.pastor)
 def edit_meeting(meeting_id: int):
     meeting = Meeting.query.get_or_404(meeting_id)
     if meeting.status == MeetingStatus.adjourned:
         abort(403)
     form = MeetingForm(obj=meeting)
+    _populate_board_choices(form)
     if not form.is_submitted():
         form.meeting_type.data = meeting.meeting_type.value
+        form.board_id.data = meeting.board_id
     if form.validate_on_submit():
         meeting.title = form.title.data.strip()
+        meeting.board_id = form.board_id.data
         meeting.meeting_type = MeetingType(form.meeting_type.data)
         meeting.scheduled_start = form.scheduled_start.data
         meeting.scheduled_end = form.scheduled_end.data
@@ -136,7 +160,7 @@ def edit_meeting(meeting_id: int):
 
 
 @bp.route("/<int:meeting_id>/cancel", methods=["POST"])
-@role_required(Role.chair, Role.vice_chair)
+@role_required(Role.chair, Role.vice_chair, Role.pastor)
 def cancel_meeting(meeting_id: int):
     meeting = Meeting.query.get_or_404(meeting_id)
     meeting.status = MeetingStatus.cancelled
