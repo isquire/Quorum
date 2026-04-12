@@ -27,6 +27,23 @@ def _populate_board_choices(form: MeetingForm) -> None:
     form.board_id.choices = [(b.id, b.display_name) for b in boards]
 
 
+def _populate_acting_chair_choices(form: MeetingForm) -> None:
+    """Fill acting_chair_id choices with eligible users.
+
+    Bylaws Art I §2: the Board of Deacons selects a temporary chair
+    from its membership. Any active user who is an officer can be an
+    acting chair.
+    """
+    users = (
+        User.query.filter_by(is_active=True)
+        .order_by(User.full_name)
+        .all()
+    )
+    form.acting_chair_id.choices = [(0, "— Pastor chairs (default) —")] + [
+        (u.id, u.full_name) for u in users
+    ]
+
+
 def _ensure_attendance_rows(meeting: Meeting) -> None:
     """Ensure relevant users have attendance rows for a meeting.
 
@@ -87,7 +104,9 @@ def list_meetings():
 def create_meeting():
     form = MeetingForm()
     _populate_board_choices(form)
+    _populate_acting_chair_choices(form)
     if form.validate_on_submit():
+        acting_chair_id = form.acting_chair_id.data
         meeting = Meeting(
             title=form.title.data.strip(),
             board_id=form.board_id.data,
@@ -98,6 +117,7 @@ def create_meeting():
             status=MeetingStatus.scheduled,
             current_stage=MeetingStage.not_started,
             created_by_id=current_user.id,
+            acting_chair_id=acting_chair_id if acting_chair_id else None,
         )
         db.session.add(meeting)
         db.session.flush()  # get meeting.id
@@ -139,16 +159,20 @@ def edit_meeting(meeting_id: int):
         abort(403)
     form = MeetingForm(obj=meeting)
     _populate_board_choices(form)
+    _populate_acting_chair_choices(form)
     if not form.is_submitted():
         form.meeting_type.data = meeting.meeting_type.value
         form.board_id.data = meeting.board_id
+        form.acting_chair_id.data = meeting.acting_chair_id or 0
     if form.validate_on_submit():
+        acting_chair_id = form.acting_chair_id.data
         meeting.title = form.title.data.strip()
         meeting.board_id = form.board_id.data
         meeting.meeting_type = MeetingType(form.meeting_type.data)
         meeting.scheduled_start = form.scheduled_start.data
         meeting.scheduled_end = form.scheduled_end.data
         meeting.location = (form.location.data or "").strip()
+        meeting.acting_chair_id = acting_chair_id if acting_chair_id else None
         db.session.commit()
         flash("Meeting updated.", "success")
         return redirect(

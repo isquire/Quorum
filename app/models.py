@@ -69,6 +69,13 @@ class MeetingStage(str, enum.Enum):
     new_business = "new_business"
     announcements = "announcements"
     adjourned = "adjourned"
+    # Annual-business assembly stages (Phase C — Bylaws Art VII)
+    devotional = "devotional"
+    minutes_reading = "minutes_reading"
+    treasurer_report = "treasurer_report"
+    committee_reports = "committee_reports"
+    elections = "elections"
+    adjournment = "adjournment"
 
 
 class RsvpStatus(str, enum.Enum):
@@ -106,6 +113,10 @@ class MotionType(str, enum.Enum):
     adjourn = "adjourn"
     recess = "recess"
     point_of_order = "point_of_order"
+    # Supermajority motion types (Phase C — Bylaws)
+    bylaw_amendment = "bylaw_amendment"           # 2/3 — Bylaws Art IX
+    property_transfer = "property_transfer"       # 2/3 — Bylaws Art VI §2
+    pastor_election = "pastor_election"           # 2/3 — Bylaws Art II §1
 
 
 class MotionStatus(str, enum.Enum):
@@ -408,10 +419,15 @@ class Meeting(TimestampMixin, db.Model):
     created_by_id = db.Column(
         db.Integer, db.ForeignKey("users.id"), nullable=False
     )
+    # Bylaws Art I §2 — acting chair when the Pastor is absent.
+    acting_chair_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=True
+    )
 
     # Relationships
     board = db.relationship("Board", back_populates="meetings")
     created_by = db.relationship("User", foreign_keys=[created_by_id])
+    acting_chair = db.relationship("User", foreign_keys=[acting_chair_id])
     minutes_approved_by = db.relationship(
         "User", foreign_keys=[minutes_approved_by_id]
     )
@@ -498,10 +514,28 @@ class Meeting(TimestampMixin, db.Model):
         return (voters // 2) + 1
 
     @property
+    def all_members_notified(self) -> bool:
+        """True when every attendance row has a non-null notified_at.
+
+        Bylaws Art I §§2-3: board meeting quorum requires all members
+        to have been notified.
+        """
+        return all(a.notified_at is not None for a in self.attendances)
+
+    @property
+    def unnotified_count(self) -> int:
+        """Number of attendance rows without a notified_at timestamp."""
+        return sum(1 for a in self.attendances if a.notified_at is None)
+
+    @property
     def has_quorum(self) -> bool:
         if self.is_assembly_meeting:
             # For assembly meetings, count all present attendees.
             return self.present_count >= self.quorum_threshold
+        # Bylaws Art I §§2-3: board meeting quorum requires all
+        # members to have been notified.
+        if not self.all_members_notified:
+            return False
         # For board meetings, count present *voting* members.
         present_voting = sum(
             1
@@ -535,6 +569,8 @@ class MeetingAttendance(TimestampMixin, db.Model):
     is_present = db.Column(db.Boolean, nullable=False, default=False)
     arrived_at = db.Column(db.DateTime, nullable=True)
     departed_at = db.Column(db.DateTime, nullable=True)
+    # Bylaws Art I §§2-3 — board meeting quorum requires all members notified.
+    notified_at = db.Column(db.DateTime, nullable=True)
 
     meeting = db.relationship("Meeting", back_populates="attendances")
     user = db.relationship("User", back_populates="attendances")
@@ -594,6 +630,8 @@ class Motion(TimestampMixin, db.Model):
         nullable=False,
         default=MotionType.main,
     )
+    # Constitution Art VIII §6 — deacons-only vote at Board of Admin meetings.
+    deacons_only = db.Column(db.Boolean, nullable=False, default=False)
     text = db.Column(db.Text, nullable=False)
     maker_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     seconder_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
@@ -642,8 +680,22 @@ class Motion(TimestampMixin, db.Model):
     )
 
     def recount(self) -> None:
+        """Recompute vote tallies from individual Vote rows.
+
+        For deacons-only motions (Constitution Art VIII §6), only votes
+        from users with pastor/deacon board membership are counted.
+        """
         yes = no = abstain = 0
         for v in self.votes:
+            # Filter out ineligible votes on deacons-only motions.
+            if self.deacons_only and self.meeting and self.meeting.board_id:
+                membership = BoardMembership.query.filter_by(
+                    user_id=v.user_id, board_id=self.meeting.board_id
+                ).first()
+                if not membership or membership.role_on_board not in (
+                    BoardRole.pastor, BoardRole.deacon
+                ):
+                    continue
             if v.choice == VoteChoice.yes:
                 yes += 1
             elif v.choice == VoteChoice.no:

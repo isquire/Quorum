@@ -3,14 +3,20 @@ from datetime import datetime
 
 from app.extensions import db
 from app.models import (
+    Board,
+    BoardMembership,
+    BoardRole,
     MajorityRule,
     Meeting,
+    MeetingAttendance,
     MeetingStage,
     MeetingStatus,
+    MeetingType,
     Motion,
     MotionResult,
     MotionStatus,
     MotionType,
+    Role,
     User,
     Vote,
     VoteChoice,
@@ -148,3 +154,160 @@ def test_two_thirds_majority_calculation(app):
     m.yes_count = 3
     m.no_count = 3
     assert m.compute_result() == MotionResult.failed
+
+
+def test_deacons_only_vote_blocks_trustee(
+    client, make_user, board_of_admin, auth, db
+):
+    """Trustees cannot vote on a deacons-only motion (Constitution Art VIII §6).
+
+    Only Pastor and Deacons may exercise voting privileges on motions
+    pertaining to Board of Deacons responsibilities.
+    """
+    # Create a pastor, a deacon, and a trustee — all on Board of Admin.
+    pastor = make_user(
+        email="pastor@example.com", full_name="Pastor", role=Role.pastor
+    )
+    deacon = make_user(
+        email="deacon@example.com", full_name="Deacon", role=Role.deacon
+    )
+    trustee = make_user(
+        email="trustee@example.com", full_name="Trustee", role=Role.trustee
+    )
+
+    for user, br in [
+        (pastor, BoardRole.pastor),
+        (deacon, BoardRole.deacon),
+        (trustee, BoardRole.trustee),
+    ]:
+        db.session.add(
+            BoardMembership(
+                board_id=board_of_admin.id,
+                user_id=user.id,
+                role_on_board=br,
+                is_voting=True,
+            )
+        )
+    db.session.flush()
+
+    # Create a Board of Admin meeting.
+    m = Meeting(
+        title="Board Meeting",
+        board_id=board_of_admin.id,
+        meeting_type=MeetingType.regular,
+        scheduled_start=pastor.created_at,
+        location="Room",
+        status=MeetingStatus.in_progress,
+        current_stage=MeetingStage.new_business,
+        called_to_order_at=datetime.utcnow(),
+        created_by_id=pastor.id,
+    )
+    db.session.add(m)
+    db.session.flush()
+
+    for u in [pastor, deacon, trustee]:
+        db.session.add(
+            MeetingAttendance(meeting_id=m.id, user_id=u.id, is_present=True)
+        )
+
+    # Create a deacons-only motion.
+    motion = Motion(
+        meeting_id=m.id,
+        motion_type=MotionType.main,
+        text="Deacons-only business",
+        maker_id=deacon.id,
+        seconder_id=pastor.id,
+        status=MotionStatus.voting,
+        requires_majority=MajorityRule.simple,
+        deacons_only=True,
+    )
+    db.session.add(motion)
+    db.session.flush()
+    m.current_motion_id = motion.id
+    db.session.commit()
+
+    # Trustee tries to vote → 403
+    auth.login("trustee@example.com")
+    resp = client.post(
+        f"/meetings/{m.id}/live/motions/{motion.id}/vote",
+        data={"choice": "yes", "submit": "Cast vote"},
+        follow_redirects=False,
+    )
+    assert resp.status_code == 403
+
+    # Deacon can vote → 200
+    auth.logout()
+    auth.login("deacon@example.com")
+    resp = client.post(
+        f"/meetings/{m.id}/live/motions/{motion.id}/vote",
+        data={"choice": "yes", "submit": "Cast vote"},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Vote.query.filter_by(motion_id=motion.id, user_id=deacon.id).count() == 1
+
+
+def test_deacons_only_recount_excludes_trustee_votes(app, db, make_user, board_of_admin):
+    """Motion.recount() ignores trustee votes on deacons-only motions."""
+    pastor = make_user(
+        email="pastor@example.com", full_name="Pastor", role=Role.pastor
+    )
+    deacon = make_user(
+        email="deacon@example.com", full_name="Deacon", role=Role.deacon
+    )
+    trustee = make_user(
+        email="trustee@example.com", full_name="Trustee", role=Role.trustee
+    )
+
+    for user, br in [
+        (pastor, BoardRole.pastor),
+        (deacon, BoardRole.deacon),
+        (trustee, BoardRole.trustee),
+    ]:
+        db.session.add(
+            BoardMembership(
+                board_id=board_of_admin.id,
+                user_id=user.id,
+                role_on_board=br,
+                is_voting=True,
+            )
+        )
+    db.session.flush()
+
+    m = Meeting(
+        title="Board Meeting",
+        board_id=board_of_admin.id,
+        meeting_type=MeetingType.regular,
+        scheduled_start=pastor.created_at,
+        location="Room",
+        status=MeetingStatus.in_progress,
+        current_stage=MeetingStage.new_business,
+        created_by_id=pastor.id,
+    )
+    db.session.add(m)
+    db.session.flush()
+
+    motion = Motion(
+        meeting_id=m.id,
+        motion_type=MotionType.main,
+        text="Deacons-only motion",
+        maker_id=deacon.id,
+        status=MotionStatus.voting,
+        requires_majority=MajorityRule.simple,
+        deacons_only=True,
+    )
+    db.session.add(motion)
+    db.session.flush()
+
+    # All three vote yes, but trustee's vote should be excluded.
+    for u in [pastor, deacon, trustee]:
+        db.session.add(
+            Vote(motion_id=motion.id, user_id=u.id, choice=VoteChoice.yes)
+        )
+    db.session.commit()
+
+    motion.recount()
+    # Only pastor + deacon counted.
+    assert motion.yes_count == 2
+    assert motion.no_count == 0
+    assert motion.abstain_count == 0

@@ -7,6 +7,11 @@
   </div>
   <div class="card-body">
     {% if active_motion %}
+      {% if active_motion.deacons_only %}
+      <div class="alert alert-warning py-1 px-2 mb-2 small">
+        Deacons-only vote — Trustees cannot vote on this motion (Constitution Art VIII &sect;6).
+      </div>
+      {% endif %}
       <p class="mb-2">
         <strong>{{ motion_type_labels.get(active_motion.motion_type, active_motion.motion_type.value) }}</strong>
         {% if active_motion.requires_majority.value == 'two_thirds' %}
@@ -39,7 +44,7 @@
         </form>
         {% endif %}
       {% elif active_motion.status.value in ['seconded', 'debating'] %}
-        {% if current_user.role.value in ['chair', 'vice_chair', 'admin'] %}
+        {% if current_user.role.value in chair_roles %}
         <form method="post" action="{{ url_for('live.open_vote', meeting_id=meeting.id, motion_id=active_motion.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <button class="btn btn-success">Open vote</button>
@@ -62,7 +67,7 @@
           </div>
         </form>
         {% endif %}
-        {% if current_user.role.value in ['chair', 'vice_chair', 'admin'] %}
+        {% if current_user.role.value in chair_roles %}
         <form method="post" action="{{ url_for('live.close_vote', meeting_id=meeting.id, motion_id=active_motion.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <button class="btn btn-warning">Close vote &amp; announce result</button>

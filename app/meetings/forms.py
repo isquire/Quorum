@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import (
+    BooleanField,
     DateTimeLocalField,
     RadioField,
     SelectField,
@@ -49,6 +50,13 @@ class MeetingForm(FlaskForm):
         validators=[Optional()],
     )
     location = StringField("Location / link", validators=[Optional()])
+    # Bylaws Art I §2 — acting chair when the Pastor is absent.
+    acting_chair_id = SelectField(
+        "Acting chair (if Pastor unavailable)",
+        choices=[],
+        validators=[Optional()],
+        coerce=int,
+    )
     submit = SubmitField("Save meeting")
 
 
@@ -121,6 +129,11 @@ class MotionForm(FlaskForm):
             (VoteMethod.roll_call.value, "Roll call (per-member)"),
         ],
         validators=[DataRequired()],
+    )
+    # Constitution Art VIII §6 — only pastor and deacons vote.
+    deacons_only = BooleanField(
+        "Deacons-only vote (Board of Admin only)",
+        default=False,
     )
     submit = SubmitField("Submit motion")
 

@@ -2,7 +2,7 @@
   <div class="card-body text-center">
     <div class="text-muted small">Quorum</div>
     <div class="display-6">
-      {{ meeting.present_count }} / {{ meeting.voting_member_count }}
+      {{ meeting.present_count }} / {{ meeting.board_voting_member_count if meeting.board and meeting.board.slug != 'assembly' else meeting.voting_member_count }}
     </div>
     {% if meeting.has_quorum %}
       <span class="badge bg-success">QUORUM MET</span>
@@ -12,5 +12,16 @@
     <div class="text-muted small mt-1">
       Needs {{ meeting.quorum_threshold }} voting members present
     </div>
+    {% if meeting.board and meeting.board.slug != 'assembly' and not meeting.all_members_notified %}
+    <div class="alert alert-warning py-1 px-2 mt-2 mb-0 small">
+      {{ meeting.unnotified_count }} member{{ 's' if meeting.unnotified_count != 1 }} not yet marked notified.
+      Board quorum requires all members notified (Bylaws Art I).
+    </div>
+    {% endif %}
+    {% if meeting.acting_chair %}
+    <div class="text-muted small mt-1">
+      Acting chair: {{ meeting.acting_chair.full_name }}
+    </div>
+    {% endif %}
   </div>
 </div>

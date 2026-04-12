@@ -21,6 +21,8 @@ from flask_login import current_user, login_required
 from .. import minutes_logger
 from ..extensions import db
 from ..models import (
+    BoardMembership,
+    BoardRole,
     MajorityRule,
     Meeting,
     MeetingAttendance,
@@ -56,12 +58,26 @@ def _get_meeting(meeting_id: int) -> Meeting:
     return Meeting.query.get_or_404(meeting_id)
 
 
+def _is_acting_chair(meeting: Meeting) -> bool:
+    """True if the current user is the meeting's acting chair."""
+    return (
+        meeting.acting_chair_id is not None
+        and current_user.id == meeting.acting_chair_id
+    )
+
+
 def _require_chair_or_vice(meeting: Meeting) -> None:
+    """Abort 403 unless the user holds a chair-equivalent role or is the
+    acting chair for this meeting."""
+    if _is_acting_chair(meeting):
+        return
     if current_user.role.value not in CHAIR_ROLES:
         abort(403)
 
 
 def _require_secretary_or_chair(meeting: Meeting) -> None:
+    if _is_acting_chair(meeting):
+        return
     if current_user.role.value not in SECRETARY_ROLES:
         abort(403)
 
@@ -107,7 +123,9 @@ def live(meeting_id: int):
 
     # Build list of allowed motion types for current state.
     allowed_types = available_motion_types(
-        meeting.current_stage, active_motion is not None
+        meeting.current_stage,
+        active_motion is not None,
+        meeting_type=meeting.meeting_type,
     )
     motion_form.motion_type.choices = [
         (t.value, t.value.replace("_", " ").title()) for t in allowed_types
@@ -120,7 +138,10 @@ def live(meeting_id: int):
             motion_id=active_motion.id, user_id=current_user.id
         ).first()
 
-    is_chair = current_user.role.value in CHAIR_ROLES
+    is_chair = (
+        current_user.role.value in CHAIR_ROLES
+        or _is_acting_chair(meeting)
+    )
 
     template = "meetings/live.html" if is_chair else "meetings/live_member.html"
     return render_template(
@@ -132,7 +153,7 @@ def live(meeting_id: int):
         note_form=note_form,
         my_vote=my_vote,
         allowed_motion_types=allowed_types,
-        next_stage=next_stage(meeting.current_stage),
+        next_stage=next_stage(meeting.current_stage, meeting.meeting_type),
     )
 
 
@@ -152,7 +173,11 @@ def call_to_order(meeting_id: int):
         return redirect(url_for("live.live", meeting_id=meeting_id))
 
     meeting.status = MeetingStatus.in_progress
-    meeting.current_stage = MeetingStage.call_to_order
+    # For annual-business meetings, the first stage is devotional, not call_to_order.
+    from ..rro import stage_order_for
+    stages = stage_order_for(meeting.meeting_type)
+    first_stage = stages[1] if len(stages) > 1 else MeetingStage.call_to_order
+    meeting.current_stage = first_stage
     meeting.called_to_order_at = datetime.utcnow()
     minutes_logger.log_call_to_order(meeting, current_user)
     db.session.commit()
@@ -169,7 +194,7 @@ def advance_stage(meeting_id: int):
         flash("Meeting is not in progress.", "warning")
         return redirect(url_for("live.live", meeting_id=meeting_id))
 
-    nxt = next_stage(meeting.current_stage)
+    nxt = next_stage(meeting.current_stage, meeting.meeting_type)
     if nxt is None:
         flash("Already at final stage.", "info")
         return redirect(url_for("live.live", meeting_id=meeting_id))
@@ -247,6 +272,27 @@ def toggle_attendance(meeting_id: int, user_id: int):
     return redirect(url_for("live.live", meeting_id=meeting_id))
 
 
+@bp.route("/attendance/<int:user_id>/notify", methods=["POST"])
+@login_required
+def mark_notified(meeting_id: int, user_id: int):
+    """Mark a board member as notified (Bylaws Art I §§2-3)."""
+    meeting = _get_meeting(meeting_id)
+    _require_secretary_or_chair(meeting)
+
+    attendance = MeetingAttendance.query.filter_by(
+        meeting_id=meeting_id, user_id=user_id
+    ).first_or_404()
+
+    if attendance.notified_at is None:
+        attendance.notified_at = datetime.utcnow()
+    else:
+        # Toggle: clear the notified timestamp.
+        attendance.notified_at = None
+
+    db.session.commit()
+    return redirect(url_for("live.live", meeting_id=meeting_id))
+
+
 # ---------------------------------------------------------------------------
 # Motions
 # ---------------------------------------------------------------------------
@@ -263,7 +309,11 @@ def make_motion(meeting_id: int):
     form = MotionForm()
     # Re-populate choices so WTForms validates.
     active = _active_motion(meeting)
-    allowed = available_motion_types(meeting.current_stage, active is not None)
+    allowed = available_motion_types(
+        meeting.current_stage,
+        active is not None,
+        meeting_type=meeting.meeting_type,
+    )
     form.motion_type.choices = [
         (t.value, t.value) for t in allowed
     ]
@@ -287,6 +337,7 @@ def make_motion(meeting_id: int):
         status=MotionStatus.proposed,
         requires_majority=MajorityRule(form.requires_majority.data),
         vote_method=VoteMethod(form.vote_method.data),
+        deacons_only=getattr(form, "deacons_only", None) and form.deacons_only.data or False,
     )
     # Two-thirds enforcement for certain motion types.
     default_rule = default_majority_rule(motion_type)
@@ -381,6 +432,16 @@ def cast_vote(meeting_id: int, motion_id: int):
     if motion.status != MotionStatus.voting:
         flash("Voting is not open on this motion.", "warning")
         return redirect(url_for("live.live", meeting_id=meeting_id))
+
+    # Constitution Art VIII §6 — deacons-only vote enforcement.
+    if motion.deacons_only and meeting.board_id:
+        membership = BoardMembership.query.filter_by(
+            user_id=current_user.id, board_id=meeting.board_id
+        ).first()
+        if not membership or membership.role_on_board not in (
+            BoardRole.pastor, BoardRole.deacon
+        ):
+            abort(403)
 
     form = VoteForm()
     if not form.validate_on_submit():

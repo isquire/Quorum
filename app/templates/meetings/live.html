@@ -12,6 +12,9 @@
       {% if meeting.called_to_order_at %}
         &middot; called to order at {{ meeting.called_to_order_at.strftime('%H:%M UTC') }}
       {% endif %}
+      {% if meeting.acting_chair %}
+        &middot; Acting chair: {{ meeting.acting_chair.full_name }}
+      {% endif %}
     </div>
   </div>
   <div>
@@ -52,13 +55,24 @@
           <span>
             {{ a.user.full_name }}
             {% if a.user.is_voting_member %}<span class="badge bg-light text-dark">voting</span>{% endif %}
+            {% if a.notified_at %}<span class="badge bg-success">notified</span>{% endif %}
           </span>
-          <form method="post" action="{{ url_for('live.toggle_attendance', meeting_id=meeting.id, user_id=a.user_id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-            <button class="btn btn-sm {{ 'btn-success' if a.is_present else 'btn-outline-secondary' }}">
-              {{ 'present' if a.is_present else 'absent' }}
-            </button>
-          </form>
+          <span class="d-flex gap-1">
+            {% if meeting.board and meeting.board.slug != 'assembly' %}
+            <form method="post" action="{{ url_for('live.mark_notified', meeting_id=meeting.id, user_id=a.user_id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <button class="btn btn-sm {{ 'btn-outline-success' if a.notified_at else 'btn-outline-warning' }}" title="Toggle notified">
+                {{ 'N' if a.notified_at else '!' }}
+              </button>
+            </form>
+            {% endif %}
+            <form method="post" action="{{ url_for('live.toggle_attendance', meeting_id=meeting.id, user_id=a.user_id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <button class="btn btn-sm {{ 'btn-success' if a.is_present else 'btn-outline-secondary' }}">
+                {{ 'present' if a.is_present else 'absent' }}
+              </button>
+            </form>
+          </span>
         </li>
         {% endfor %}
       </ul>
@@ -76,7 +90,7 @@
             {{ item.title }}
             <div class="text-muted">{{ item.category.value.replace('_',' ') }}</div>
           </div>
-          {% if current_user.role.value in ['chair', 'vice_chair', 'admin', 'pastor'] %}
+          {% if current_user.role.value in chair_roles %}
           <form method="post" action="{{ url_for('live.set_agenda_item', meeting_id=meeting.id, item_id=item.id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <button class="btn btn-sm btn-outline-primary">Take up</button>
@@ -99,6 +113,9 @@
           {{ render_field(motion_form.motion_type) }}
           {{ render_field(motion_form.requires_majority) }}
           {{ render_field(motion_form.vote_method) }}
+          {% if meeting.board and meeting.board.slug == 'board_of_administration' %}
+            {{ render_field(motion_form.deacons_only, help="Only Pastor and Deacons may vote (Constitution Art VIII \u00a76)") }}
+          {% endif %}
           {{ motion_form.submit(class="btn btn-primary") }}
         </form>
       </div>

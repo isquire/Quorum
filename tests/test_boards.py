@@ -1,4 +1,6 @@
 """Tests for the Phase B board model and board memberships."""
+from datetime import datetime
+
 from app.extensions import db
 from app.models import (
     Board,
@@ -99,8 +101,11 @@ def test_board_quorum_uses_board_members(app, db, make_user, board_of_admin):
     db.session.add(m)
     db.session.flush()
 
+    now = datetime.utcnow()
     for u in users:
-        db.session.add(MeetingAttendance(meeting_id=m.id, user_id=u.id))
+        db.session.add(MeetingAttendance(
+            meeting_id=m.id, user_id=u.id, notified_at=now,
+        ))
     db.session.commit()
 
     # Board has 5 voting members, quorum = 3.
