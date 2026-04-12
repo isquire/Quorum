@@ -10,6 +10,11 @@ TERM_TRACKED_ROLES = [
     for role in TERM_RULES
 ]
 
+TERM_STATUS_CHOICES = [
+    ("active", "Active (currently serving)"),
+    ("completed", "Completed (past term, already ended)"),
+]
+
 TERM_END_STATUS_CHOICES = [
     ("resigned", "Resigned"),
     ("removed", "Removed"),
@@ -38,6 +43,11 @@ class RecordTermForm(FlaskForm):
         "Term start date",
         validators=[DataRequired()],
     )
+    status = SelectField(
+        "Status",
+        choices=TERM_STATUS_CHOICES,
+        validators=[DataRequired()],
+    )
     notes = TextAreaField("Notes", validators=[Optional()])
     submit = SubmitField("Record term")
 
@@ -54,3 +64,4 @@ class EndTermForm(FlaskForm):
     )
     notes = TextAreaField("Notes", validators=[Optional()])
     submit = SubmitField("End term")
+

@@ -4,20 +4,53 @@
 {% block content %}
 <h1 class="h3 mb-4">Record new term &mdash; {{ board.display_name }}</h1>
 
-<div class="card shadow-sm">
-  <div class="card-body">
-    <form method="post">
-      {{ form.hidden_tag() }}
-      {{ render_field(form.user_id) }}
-      {{ render_field(form.role_on_board) }}
-      {{ render_field(form.elected_at_meeting_id, help="Select the annual business meeting where this election took place.") }}
-      {{ render_field(form.term_start, help="Auto-calculated as the first day of the month after the meeting. Adjust if needed.") }}
-      {{ render_field(form.notes) }}
-      <div class="d-flex gap-2">
-        {{ form.submit(class="btn btn-primary") }}
-        <a class="btn btn-outline-secondary" href="{{ url_for('boards.board_detail', slug=board.slug) }}">Cancel</a>
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <form method="post">
+          {{ form.hidden_tag() }}
+          {{ render_field(form.user_id) }}
+          {{ render_field(form.role_on_board) }}
+          {{ render_field(form.elected_at_meeting_id, help="Select the meeting where the election took place, or '— None —' for historical entries without a meeting record.") }}
+          {{ render_field(form.term_start, help="First day of service. For elections at the annual business meeting, this is the first of the month after the meeting (e.g. Feb meeting → Mar 1).") }}
+          {% if term_end_preview %}
+          <div class="alert alert-info py-2 small">
+            Calculated term end: <strong>{{ term_end_preview.strftime('%b %d, %Y') }}</strong>
+          </div>
+          {% endif %}
+          {{ render_field(form.status, help="Use 'Completed' when entering past terms that have already ended (e.g. backfilling election history). Use 'Active' for a current term.") }}
+          {{ render_field(form.notes) }}
+          <div class="d-flex gap-2">
+            {{ form.submit(class="btn btn-primary") }}
+            <a class="btn btn-outline-secondary" href="{{ url_for('boards.board_detail', slug=board.slug) }}">Cancel</a>
+          </div>
+        </form>
       </div>
-    </form>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm">
+      <div class="card-header">Term rules reference</div>
+      <div class="card-body small">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Role</th><th>Length</th><th>Max</th></tr></thead>
+          <tbody>
+            {% for role, rules in term_rules.items() %}
+            <tr>
+              <td>{{ role.replace('_', ' ').title() }}</td>
+              <td>{{ rules.term_years }} yr</td>
+              <td>{{ rules.max_consecutive }} term{{ 's' if rules.max_consecutive != 1 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="text-muted mt-2 mb-0">
+          1-year cooldown after max consecutive terms.
+        </p>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

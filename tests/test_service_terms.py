@@ -374,6 +374,7 @@ def test_record_term_creates_service_term(client, app, db, auth, make_user, boar
             "role_on_board": "deacon",
             "elected_at_meeting_id": meeting.id,
             "term_start": "2026-02-01",
+            "status": "active",
             "notes": "First term",
             "submit": "Record term",
         },
@@ -387,6 +388,40 @@ def test_record_term_creates_service_term(client, app, db, auth, make_user, boar
     assert term.term_end == date(2029, 1, 31)
     assert term.term_number == 1
     assert term.role_on_board == BoardRole.deacon
+
+
+def test_record_completed_historical_term(client, app, db, auth, make_user, board_of_admin):
+    """Admin can record a past term as 'completed' for backfilling history."""
+    admin = make_user(email="admin@test.com", full_name="Admin", role=Role.admin)
+    user = make_user(email="d@test.com", full_name="Deacon D", role=Role.deacon)
+
+    auth.login("admin@test.com")
+    resp = client.post(
+        "/boards/board_of_administration/record-term",
+        data={
+            "user_id": user.id,
+            "role_on_board": "deacon",
+            "elected_at_meeting_id": 0,
+            "term_start": "2020-03-01",
+            "status": "completed",
+            "notes": "Historical backfill",
+            "submit": "Record term",
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+
+    term = ServiceTerm.query.filter_by(user_id=user.id).first()
+    assert term is not None
+    assert term.status == TermStatus.completed
+    assert term.term_start == date(2020, 3, 1)
+    assert term.term_end == date(2023, 2, 28)
+    assert term.elected_at_meeting_id is None
+    # Completed terms should NOT create a BoardMembership.
+    bm = BoardMembership.query.filter_by(
+        board_id=board_of_admin.id, user_id=user.id
+    ).first()
+    assert bm is None
 
 
 def test_end_term_sets_actual_end(client, app, db, auth, make_user, board_of_admin):

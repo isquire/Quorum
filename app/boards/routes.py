@@ -149,6 +149,7 @@ def record_term(slug: str):
         role_value = form.role_on_board.data
         term_start = form.term_start.data
         term_end = compute_term_end(term_start, role_value)
+        term_status = TermStatus(form.status.data)
 
         # Determine consecutive term number.
         consecutive = count_consecutive_terms(
@@ -157,11 +158,13 @@ def record_term(slug: str):
         term_number = consecutive + 1
 
         # Check eligibility (warn but don't block).
-        eligible, reason = is_eligible_for_term(
-            form.user_id.data, board.id, role_value
-        )
-        if not eligible:
-            flash(f"Warning: {reason}. Recording term anyway.", "warning")
+        # Skip for completed historical terms — the election already happened.
+        if term_status == TermStatus.active:
+            eligible, reason = is_eligible_for_term(
+                form.user_id.data, board.id, role_value
+            )
+            if not eligible:
+                flash(f"Warning: {reason}. Recording term anyway.", "warning")
 
         meeting_id = form.elected_at_meeting_id.data
         term = ServiceTerm(
@@ -172,26 +175,29 @@ def record_term(slug: str):
             term_start=term_start,
             term_end=term_end,
             term_number=term_number,
-            status=TermStatus.active,
+            status=term_status,
             notes=(form.notes.data or "").strip(),
         )
         db.session.add(term)
 
-        # Ensure the user has a BoardMembership on this board.
-        existing = BoardMembership.query.filter_by(
-            board_id=board.id, user_id=form.user_id.data
-        ).first()
-        if not existing:
-            db.session.add(BoardMembership(
-                board_id=board.id,
-                user_id=form.user_id.data,
-                role_on_board=BoardRole(role_value),
-                is_voting=True,
-            ))
+        # Ensure the user has a BoardMembership on this board
+        # (only for active terms — completed terms are historical).
+        if term_status == TermStatus.active:
+            existing = BoardMembership.query.filter_by(
+                board_id=board.id, user_id=form.user_id.data
+            ).first()
+            if not existing:
+                db.session.add(BoardMembership(
+                    board_id=board.id,
+                    user_id=form.user_id.data,
+                    role_on_board=BoardRole(role_value),
+                    is_voting=True,
+                ))
 
         db.session.commit()
+        label = "active" if term_status == TermStatus.active else "completed"
         flash(
-            f"Recorded term for {term.user.full_name}: "
+            f"Recorded {label} term for {term.user.full_name}: "
             f"{term_start.strftime('%b %Y')} – {term_end.strftime('%b %Y')}.",
             "success",
         )
@@ -203,10 +209,22 @@ def record_term(slug: str):
         form.term_start.data = compute_term_start(meeting.scheduled_start)
         form.elected_at_meeting_id.data = meeting.id
 
+    # Compute preview of term end for the template.
+    term_end_preview = None
+    if form.term_start.data and form.role_on_board.data:
+        try:
+            term_end_preview = compute_term_end(
+                form.term_start.data, form.role_on_board.data
+            )
+        except (ValueError, TypeError):
+            pass
+
     return render_template(
         "boards/record_term.html",
         board=board,
         form=form,
+        term_rules=TERM_RULES,
+        term_end_preview=term_end_preview,
     )
 
 
