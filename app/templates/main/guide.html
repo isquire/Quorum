@@ -22,7 +22,9 @@
           <a class="list-group-item list-group-item-action" href="#deacons-only">13. Deacons-only votes &amp; supermajority</a>
           <a class="list-group-item list-group-item-action" href="#notification">14. Notification requirement</a>
           <a class="list-group-item list-group-item-action" href="#acting-chair">15. Acting chair</a>
-          <a class="list-group-item list-group-item-action" href="#tips">16. Tips &amp; pitfalls</a>
+          <a class="list-group-item list-group-item-action" href="#vote-methods">16. Vote methods</a>
+          <a class="list-group-item list-group-item-action" href="#service-terms">17. Service terms &amp; term limits</a>
+          <a class="list-group-item list-group-item-action" href="#tips">18. Tips &amp; pitfalls</a>
         </nav>
       </div>
     </div>
@@ -499,8 +501,158 @@
       </p>
     </section>
 
+    <section id="vote-methods" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">16. Vote methods</h2>
+      <p>
+        When making a motion, the maker selects one of two vote methods. The
+        method determines how votes are captured in the app:
+      </p>
+      <h3 class="h6">Voice / show-of-hands</h3>
+      <p>
+        Members vote verbally or by raising hands. The chair (or secretary)
+        counts and enters the totals directly into the app using the
+        <strong>manual tally form</strong> &mdash; three fields for
+        <em>Yes</em>, <em>No</em>, and <em>Abstain</em>. Individual members
+        do <strong>not</strong> vote through the app.
+      </p>
+      <p>
+        This is the default method and the right choice for most board
+        motions, since only the Pastor, Secretary, and a few board members
+        are typically using devices during the meeting.
+      </p>
+      <h3 class="h6">Roll call (per-member)</h3>
+      <p>
+        Each voting member casts their vote individually through the app by
+        clicking Yes / No / Abstain. The app records who voted which way,
+        providing a full audit trail. Use this when the bylaws require a
+        roll-call vote or when the board wants individual votes on the
+        record.
+      </p>
+      <p>
+        The minutes entry for each vote includes a label &mdash;
+        <em>[voice vote]</em> or <em>[roll call]</em> &mdash; so the
+        record clearly shows which method was used.
+      </p>
+      <p class="mb-0 small text-muted">
+        If a member tries to cast a per-member vote on a voice-method
+        motion, the app will redirect them with a warning. The chair
+        enters the tally instead.
+      </p>
+    </section>
+
+    <section id="service-terms" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">17. Service terms &amp; term limits</h2>
+      <p>
+        The app tracks term limits and service timelines for the four elected
+        board positions. These positions are voted on at the annual business
+        meeting and begin service the month after the meeting (e.g. elected
+        in January &rarr; term starts February 1).
+      </p>
+      <h3 class="h6">Term rules</h3>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Position</th>
+              <th>Term length</th>
+              <th>Max consecutive terms</th>
+              <th>Cooldown</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Deacon</td>
+              <td>3 years</td>
+              <td>1</td>
+              <td>1 year off before eligible again</td>
+            </tr>
+            <tr>
+              <td>Trustee</td>
+              <td>3 years</td>
+              <td>1</td>
+              <td>1 year off before eligible again</td>
+            </tr>
+            <tr>
+              <td>Treasurer</td>
+              <td>2 years</td>
+              <td>3 (Bylaws Art. II &sect;2)</td>
+              <td>1 year off before eligible again</td>
+            </tr>
+            <tr>
+              <td>Asst. Treasurer</td>
+              <td>2 years</td>
+              <td>2</td>
+              <td>1 year off before eligible again</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Positions not listed above &mdash; Pastor, Secretary &mdash; have
+        <strong>no term limits</strong> and are not tracked in the term system.
+      </p>
+      <h3 class="h6">How to use the Boards page</h3>
+      <p>
+        Navigate to <strong>Boards</strong> in the top menu to see all three
+        governing bodies. Click a board to see:
+      </p>
+      <ul>
+        <li>
+          <strong>Current service terms</strong> &mdash; who is serving, their
+          role, term start/end dates, months remaining, and which consecutive
+          term they are on.
+        </li>
+        <li>
+          <strong>Expiring soon</strong> &mdash; terms ending within 6 months,
+          highlighted so the board can plan ahead for elections.
+        </li>
+        <li>
+          <strong>In cooldown</strong> &mdash; members who have served the
+          maximum consecutive terms and must wait before being eligible again.
+          Shows the eligibility date and months remaining.
+        </li>
+        <li>
+          <strong>Past terms</strong> &mdash; completed, resigned, or removed
+          terms for historical reference.
+        </li>
+      </ul>
+      <h3 class="h6">Recording a new term</h3>
+      <p>
+        After an election at the annual business meeting, an admin clicks
+        <strong>Record new term</strong> on the board detail page:
+      </p>
+      <ol>
+        <li>Select the member who was elected.</li>
+        <li>Choose their role (Deacon, Trustee, Treasurer, or Asst. Treasurer).</li>
+        <li>
+          Select the annual business meeting where the election occurred.
+          The <em>Term start date</em> auto-populates to the first of the
+          month after the meeting. The <em>Term end date</em> is calculated
+          automatically from the term length.
+        </li>
+        <li>Add any notes (optional) and save.</li>
+      </ol>
+      <p>
+        The app warns if the member is still in a cooldown period but does
+        not block the recording &mdash; the admin can override if needed.
+      </p>
+      <h3 class="h6">Ending a term early</h3>
+      <p>
+        If a member resigns or is removed mid-term, click <strong>End
+        early</strong> next to their term. Enter the last day of service,
+        select the reason (Resigned or Removed), and optionally add notes.
+        The term moves to the past-terms history with the appropriate status.
+      </p>
+      <h3 class="h6">Dashboard</h3>
+      <p class="mb-0">
+        The main dashboard shows a <strong>Terms expiring soon</strong>
+        card when any terms are ending within 6 months, so officers can
+        plan ahead for nominations and elections.
+      </p>
+    </section>
+
     <section id="tips" class="mb-5">
-      <h2 class="h4 border-bottom pb-2">16. Tips &amp; pitfalls</h2>
+      <h2 class="h4 border-bottom pb-2">18. Tips &amp; pitfalls</h2>
       <ul>
         <li><strong>One browser per person.</strong> Every attending board member should have Quorum open on their own device so they can second motions and cast their own votes.</li>
         <li><strong>Don&rsquo;t forget to open the vote.</strong> A common slip-up: chair discusses a motion and then tries to advance without opening the vote. The motion stays on the floor and blocks advancement.</li>
