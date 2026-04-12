@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Boards{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Boards &amp; Governing Bodies</h1>
+
+<div class="row g-4">
+  {% for board in boards %}
+  <div class="col-md-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h5 class="card-title">
+          <a href="{{ url_for('boards.board_detail', slug=board.slug) }}">{{ board.display_name }}</a>
+        </h5>
+        <p class="mb-1 text-muted small">
+          {{ board.memberships|length }} member{{ 's' if board.memberships|length != 1 }}
+        </p>
+        {% set exp = expiring_counts.get(board.id, 0) %}
+        {% if exp > 0 %}
+        <p class="mb-0">
+          <span class="badge bg-warning text-dark">{{ exp }} term{{ 's' if exp != 1 }} expiring soon</span>
+        </p>
+        {% endif %}
+      </div>
+      <div class="card-footer bg-transparent">
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('boards.board_detail', slug=board.slug) }}">
+          View details
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

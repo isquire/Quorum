@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+{% block title %}End term — {{ term.user.full_name }}{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">End term early</h1>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <p>
+      <strong>{{ term.user.full_name }}</strong> &mdash;
+      {{ term.role_on_board.value.replace('_', ' ').title() }} on {{ board.display_name }}<br>
+      <span class="text-muted">Term: {{ term.term_start.strftime('%b %Y') }} – {{ term.term_end.strftime('%b %Y') }}</span>
+    </p>
+
+    <form method="post">
+      {{ form.hidden_tag() }}
+      {{ render_field(form.actual_end) }}
+      {{ render_field(form.status) }}
+      {{ render_field(form.notes) }}
+      <div class="d-flex gap-2">
+        {{ form.submit(class="btn btn-danger") }}
+        <a class="btn btn-outline-secondary" href="{{ url_for('boards.board_detail', slug=board.slug) }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

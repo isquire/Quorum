@@ -24,6 +24,7 @@
         <li class="nav-item"><a class="nav-link" href="{{ url_for('meetings.list_meetings') }}">Meetings</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('minutes.list_minutes') }}">Minutes</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.list_reports') }}">Reports</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('boards.list_boards') }}">Boards</a></li>
         {% if current_user.role.value == 'admin' %}
         <li class="nav-item"><a class="nav-link" href="{{ url_for('users.list_users') }}">Users</a></li>
         {% endif %}

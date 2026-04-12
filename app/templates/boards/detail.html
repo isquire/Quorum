@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}{{ board.display_name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">{{ board.display_name }}</h1>
+  {% if current_user.role.value == 'admin' %}
+  <a class="btn btn-primary" href="{{ url_for('boards.record_term', slug=board.slug) }}">
+    + Record new term
+  </a>
+  {% endif %}
+</div>
+
+{# ---- Current active terms ---- #}
+<div class="card shadow-sm mb-4">
+  <div class="card-header">Current service terms</div>
+  {% if active_terms %}
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Role</th>
+          <th>Term start</th>
+          <th>Term end</th>
+          <th>Months left</th>
+          <th>Term #</th>
+          <th>Max terms</th>
+          {% if current_user.role.value == 'admin' %}
+          <th></th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in active_terms %}
+        {% set rules = term_rules.get(t.role_on_board.value, {}) %}
+        <tr{% if t.term_end <= today %} class="table-danger"{% endif %}>
+          <td>{{ t.user.full_name }}</td>
+          <td>{{ t.role_on_board.value.replace('_', ' ').title() }}</td>
+          <td>{{ t.term_start.strftime('%b %Y') }}</td>
+          <td>{{ t.term_end.strftime('%b %Y') }}</td>
+          <td>
+            {% if t.months_remaining is not none %}
+              {% if t.months_remaining <= 6 %}
+                <span class="text-warning fw-bold">{{ t.months_remaining }}</span>
+              {% else %}
+                {{ t.months_remaining }}
+              {% endif %}
+            {% else %}
+              <span class="text-danger">Expired</span>
+            {% endif %}
+          </td>
+          <td>{{ t.term_number }}</td>
+          <td>{{ rules.get('max_consecutive', '—') }}</td>
+          {% if current_user.role.value == 'admin' %}
+          <td>
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('boards.end_term', term_id=t.id) }}">
+              End early
+            </a>
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body text-muted">No active service terms recorded.</div>
+  {% endif %}
+</div>
+
+{# ---- Expiring soon ---- #}
+{% if expiring_terms %}
+<div class="card shadow-sm mb-4 border-warning">
+  <div class="card-header bg-warning text-dark">Expiring within 6 months</div>
+  <ul class="list-group list-group-flush">
+    {% for t in expiring_terms %}
+    <li class="list-group-item d-flex justify-content-between">
+      <span>{{ t.user.full_name }} &mdash; {{ t.role_on_board.value.replace('_', ' ').title() }}</span>
+      <span>{{ t.term_end.strftime('%b %d, %Y') }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{# ---- Cooldown members ---- #}
+{% if cooldown_members %}
+<div class="card shadow-sm mb-4 border-info">
+  <div class="card-header bg-info text-white">In cooldown (served max terms)</div>
+  <ul class="list-group list-group-flush">
+    {% for cm in cooldown_members %}
+    <li class="list-group-item d-flex justify-content-between">
+      <span>{{ cm.user.full_name }} &mdash; {{ cm.role.value.replace('_', ' ').title() }}</span>
+      <span>Eligible again {{ cm.cooldown_end.strftime('%b %Y') }} ({{ cm.months_left }} mo.)</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{# ---- Past terms ---- #}
+{% if past_terms %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header">Past terms</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Role</th>
+          <th>Term</th>
+          <th>Status</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in past_terms %}
+        <tr>
+          <td>{{ t.user.full_name }}</td>
+          <td>{{ t.role_on_board.value.replace('_', ' ').title() }}</td>
+          <td>{{ t.term_start.strftime('%b %Y') }} – {{ t.effective_end.strftime('%b %Y') }}</td>
+          <td>
+            {% if t.status.value == 'completed' %}
+              <span class="badge bg-success">Completed</span>
+            {% elif t.status.value == 'resigned' %}
+              <span class="badge bg-secondary">Resigned</span>
+            {% elif t.status.value == 'removed' %}
+              <span class="badge bg-danger">Removed</span>
+            {% endif %}
+          </td>
+          <td class="small">{{ t.notes or '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<a class="btn btn-outline-secondary" href="{{ url_for('boards.list_boards') }}">&larr; All boards</a>
+{% endblock %}

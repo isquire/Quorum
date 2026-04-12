@@ -1,9 +1,9 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from flask import render_template
 from flask_login import login_required
 
-from ..models import Meeting, MeetingStatus, Report
+from ..models import Meeting, MeetingStatus, Report, ServiceTerm, TermStatus
 from . import bp
 
 
@@ -39,12 +39,29 @@ def dashboard():
         .limit(5)
         .all()
     )
+
+    # Terms expiring within 6 months.
+    today = date.today()
+    six_months = date(
+        today.year + (1 if today.month > 6 else 0),
+        (today.month + 6 - 1) % 12 + 1,
+        today.day if today.day <= 28 else 28,
+    )
+    expiring_terms = (
+        ServiceTerm.query
+        .filter_by(status=TermStatus.active)
+        .filter(ServiceTerm.term_end <= six_months)
+        .order_by(ServiceTerm.term_end.asc())
+        .all()
+    )
+
     return render_template(
         "main/dashboard.html",
         upcoming=upcoming,
         in_progress=in_progress,
         recent=recent,
         pending_reports=pending_reports,
+        expiring_terms=expiring_terms,
     )
 
 

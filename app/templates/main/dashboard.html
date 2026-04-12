@@ -81,5 +81,28 @@
       </ul>
     </div>
   </div>
+
+  {% if expiring_terms %}
+  <div class="col-md-6">
+    <div class="card shadow-sm border-warning">
+      <div class="card-header bg-warning text-dark">Terms expiring soon</div>
+      <ul class="list-group list-group-flush">
+        {% for t in expiring_terms %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>
+            {{ t.user.full_name }} &mdash;
+            {{ t.role_on_board.value.replace('_', ' ').title() }}
+            on {{ t.board.display_name }}
+          </span>
+          <span class="text-muted small">{{ t.term_end.strftime('%b %Y') }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      <div class="card-footer bg-transparent">
+        <a class="btn btn-sm btn-outline-warning" href="{{ url_for('boards.list_boards') }}">View boards</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

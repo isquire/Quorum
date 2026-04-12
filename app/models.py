@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import enum
 import math
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 from flask_login import UserMixin
 from sqlalchemy import CheckConstraint, UniqueConstraint
@@ -173,6 +173,24 @@ class ReportType(str, enum.Enum):
     other = "other"
 
 
+class TermStatus(str, enum.Enum):
+    """Status of a board officer's service term."""
+    active = "active"
+    completed = "completed"
+    resigned = "resigned"
+    removed = "removed"
+
+
+# Term-limit rules keyed by BoardRole value.  Roles not listed here
+# (pastor, secretary, member) have no term limits and are not tracked.
+TERM_RULES: dict[str, dict] = {
+    "deacon":              {"term_years": 3, "max_consecutive": 1, "cooldown_years": 1},
+    "trustee":             {"term_years": 3, "max_consecutive": 1, "cooldown_years": 1},
+    "treasurer":           {"term_years": 2, "max_consecutive": 3, "cooldown_years": 1},
+    "assistant_treasurer": {"term_years": 2, "max_consecutive": 2, "cooldown_years": 1},
+}
+
+
 # ---------------------------------------------------------------------------
 # Mixins
 # ---------------------------------------------------------------------------
@@ -223,6 +241,9 @@ class User(UserMixin, TimestampMixin, db.Model):
     )
     board_memberships = db.relationship(
         "BoardMembership", back_populates="user", cascade="all, delete-orphan"
+    )
+    service_terms = db.relationship(
+        "ServiceTerm", back_populates="user", cascade="all, delete-orphan"
     )
     motions_made = db.relationship(
         "Motion", foreign_keys="Motion.maker_id", back_populates="maker"
@@ -298,6 +319,7 @@ class Board(TimestampMixin, db.Model):
         "BoardMembership", back_populates="board", cascade="all, delete-orphan"
     )
     meetings = db.relationship("Meeting", back_populates="board")
+    service_terms = db.relationship("ServiceTerm", back_populates="board")
 
     @property
     def voting_member_count(self) -> int:
@@ -358,6 +380,186 @@ def seed_boards() -> list[Board]:
             boards.append(b)
     db.session.flush()
     return boards
+
+
+class ServiceTerm(TimestampMixin, db.Model):
+    """One term of service on a board in a specific elected role."""
+    __tablename__ = "service_terms"
+    __table_args__ = (
+        UniqueConstraint(
+            "board_id", "user_id", "role_on_board", "term_start",
+            name="uq_service_term",
+        ),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    board_id = db.Column(
+        db.Integer, db.ForeignKey("boards.id"), nullable=False
+    )
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False
+    )
+    role_on_board = db.Column(
+        db.Enum(BoardRole, native_enum=False), nullable=False
+    )
+
+    # Link to the annual business meeting where the election occurred.
+    elected_at_meeting_id = db.Column(
+        db.Integer, db.ForeignKey("meetings.id"), nullable=True
+    )
+
+    term_start = db.Column(db.Date, nullable=False)
+    term_end = db.Column(db.Date, nullable=False)
+    # Set when the term ends early (resignation / removal).
+    actual_end = db.Column(db.Date, nullable=True)
+
+    term_number = db.Column(db.Integer, nullable=False, default=1)
+    status = db.Column(
+        db.Enum(TermStatus, native_enum=False),
+        nullable=False,
+        default=TermStatus.active,
+    )
+    notes = db.Column(db.Text, nullable=False, default="")
+
+    # Relationships
+    board = db.relationship("Board", back_populates="service_terms")
+    user = db.relationship("User", back_populates="service_terms")
+    elected_at_meeting = db.relationship("Meeting")
+
+    @property
+    def effective_end(self) -> date:
+        """The date this term actually ends/ended."""
+        return self.actual_end or self.term_end
+
+    @property
+    def is_current(self) -> bool:
+        """True if the term is active and today falls within it."""
+        today = date.today()
+        return (
+            self.status == TermStatus.active
+            and self.term_start <= today <= self.term_end
+        )
+
+    @property
+    def days_remaining(self) -> int | None:
+        """Days until term_end.  None if term is not active."""
+        if not self.is_current:
+            return None
+        return (self.term_end - date.today()).days
+
+    @property
+    def months_remaining(self) -> int | None:
+        """Approximate months remaining (for UI display)."""
+        days = self.days_remaining
+        if days is None:
+            return None
+        return max(0, days // 30)
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return (
+            f"<ServiceTerm {self.user_id} "
+            f"{self.role_on_board.value} #{self.term_number}>"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Service-term helper functions
+# ---------------------------------------------------------------------------
+
+
+def compute_term_start(meeting_scheduled_start: datetime) -> date:
+    """First day of the month after the meeting's scheduled_start.
+
+    Annual business meeting in January → term starts February 1.
+    """
+    sd = meeting_scheduled_start
+    if sd.month == 12:
+        return date(sd.year + 1, 1, 1)
+    return date(sd.year, sd.month + 1, 1)
+
+
+def compute_term_end(term_start: date, role_value: str) -> date:
+    """term_start + term_length_years, last day of preceding month.
+
+    E.g. Feb 1 2026 + 2 years → Jan 31 2028.
+    """
+    rules = TERM_RULES.get(role_value)
+    if rules is None:
+        raise ValueError(f"No term rules for role '{role_value}'")
+    years = rules["term_years"]
+    end_year = term_start.year + years
+    return date(end_year, term_start.month, 1) - timedelta(days=1)
+
+
+def count_consecutive_terms(
+    user_id: int, board_id: int, role_value: str
+) -> int:
+    """Count consecutive completed/active terms for this user+board+role,
+    working backward from the most recent."""
+    terms = (
+        ServiceTerm.query
+        .filter_by(user_id=user_id, board_id=board_id, role_on_board=BoardRole(role_value))
+        .filter(ServiceTerm.status.in_([TermStatus.active, TermStatus.completed]))
+        .order_by(ServiceTerm.term_start.desc())
+        .all()
+    )
+    if not terms:
+        return 0
+    count = 1
+    for i in range(len(terms) - 1):
+        current = terms[i]
+        previous = terms[i + 1]
+        gap = (current.term_start - previous.effective_end).days
+        if gap <= 60:  # allow small gaps for month boundaries
+            count += 1
+        else:
+            break
+    return count
+
+
+def cooldown_end_date(
+    user_id: int, board_id: int, role_value: str
+) -> date | None:
+    """If the user has served max consecutive terms, return the date
+    they become eligible again.  None if no cooldown applies."""
+    rules = TERM_RULES.get(role_value)
+    if rules is None:
+        return None
+    consecutive = count_consecutive_terms(user_id, board_id, role_value)
+    if consecutive < rules["max_consecutive"]:
+        return None
+    last_term = (
+        ServiceTerm.query
+        .filter_by(
+            user_id=user_id, board_id=board_id,
+            role_on_board=BoardRole(role_value),
+        )
+        .filter(ServiceTerm.status.in_([TermStatus.active, TermStatus.completed]))
+        .order_by(ServiceTerm.term_start.desc())
+        .first()
+    )
+    if last_term is None:
+        return None
+    cooldown_years = rules["cooldown_years"]
+    end = last_term.effective_end
+    return date(end.year + cooldown_years, end.month, end.day)
+
+
+def is_eligible_for_term(
+    user_id: int, board_id: int, role_value: str
+) -> tuple[bool, str]:
+    """Check whether a user is eligible to be elected/re-elected.
+
+    Returns ``(eligible, reason)`` tuple.
+    """
+    rules = TERM_RULES.get(role_value)
+    if rules is None:
+        return True, "No term limits for this role"
+    cd_end = cooldown_end_date(user_id, board_id, role_value)
+    if cd_end and date.today() < cd_end:
+        months_left = max(0, (cd_end - date.today()).days // 30)
+        return False, f"In cooldown until {cd_end.strftime('%B %Y')} ({months_left} months)"
+    return True, "Eligible"
 
 
 class Meeting(TimestampMixin, db.Model):
