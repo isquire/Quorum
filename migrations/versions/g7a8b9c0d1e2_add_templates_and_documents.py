@@ -3,7 +3,7 @@
 Meeting templates allow admins to save reusable agenda item sets.
 The document repository stores governance documents with version history.
 
-Revision ID: a1b2c3d4e5f6
+Revision ID: g7a8b9c0d1e2
 Revises: f6a7b8c9d0e1
 Create Date: 2026-04-12 23:50:00.000000
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "a1b2c3d4e5f6"
+revision = "g7a8b9c0d1e2"
 down_revision = "f6a7b8c9d0e1"
 branch_labels = None
 depends_on = None
