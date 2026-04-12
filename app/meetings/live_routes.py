@@ -554,7 +554,10 @@ def chair_note(meeting_id: int):
     if not form.validate_on_submit():
         flash("Please enter a note.", "danger")
         return redirect(url_for("live.live", meeting_id=meeting_id))
-    minutes_logger.log_chair_note(meeting, form.note.data.strip(), current_user)
+    minutes_logger.log_chair_note(
+        meeting, form.note.data.strip(), current_user,
+        is_confidential=form.is_confidential.data,
+    )
     db.session.commit()
     flash("Note added to minutes.", "success")
     return redirect(url_for("live.live", meeting_id=meeting_id))

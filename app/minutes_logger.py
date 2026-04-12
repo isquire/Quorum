@@ -40,7 +40,16 @@ def _append(
     actor: User | None = None,
     related_motion: Motion | None = None,
     related_agenda_item: AgendaItem | None = None,
+    is_confidential: bool | None = None,
 ) -> MinutesEntry:
+    # Auto-detect confidentiality from the current agenda item when not
+    # explicitly provided.
+    if is_confidential is None:
+        item = related_agenda_item or meeting.current_agenda_item
+        is_confidential = bool(
+            item is not None and getattr(item, "is_confidential", False)
+        )
+
     entry = MinutesEntry(
         meeting_id=meeting.id,
         sequence=_next_sequence(meeting.id),
@@ -52,6 +61,7 @@ def _append(
             related_agenda_item.id if related_agenda_item else None
         ),
         text=text,
+        is_confidential=is_confidential,
     )
     db.session.add(entry)
     return entry
@@ -183,12 +193,18 @@ def log_motion_voted(
     )
 
 
-def log_chair_note(meeting: Meeting, note: str, actor: User) -> MinutesEntry:
+def log_chair_note(
+    meeting: Meeting,
+    note: str,
+    actor: User,
+    is_confidential: bool | None = None,
+) -> MinutesEntry:
     return _append(
         meeting,
         MinutesEntryType.chair_note,
         note,
         actor=actor,
+        is_confidential=is_confidential,
     )
 
 

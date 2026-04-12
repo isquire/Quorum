@@ -132,6 +132,7 @@
         <form method="post" action="{{ url_for('live.chair_note', meeting_id=meeting.id) }}">
           {{ note_form.hidden_tag() }}
           {{ render_field(note_form.note) }}
+          {{ render_field(note_form.is_confidential) }}
           {{ note_form.submit(class="btn btn-outline-primary") }}
         </form>
       </div>

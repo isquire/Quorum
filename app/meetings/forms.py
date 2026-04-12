@@ -95,6 +95,7 @@ class AgendaItemForm(FlaskForm):
     presenter_id = SelectField(
         "Presenter", choices=[], validators=[Optional()], coerce=int
     )
+    is_confidential = BooleanField("Confidential", default=False)
     submit = SubmitField("Save")
 
 
@@ -169,4 +170,5 @@ class ManualTallyForm(FlaskForm):
 
 class ChairNoteForm(FlaskForm):
     note = TextAreaField("Note", validators=[DataRequired()])
+    is_confidential = BooleanField("Confidential", default=False)
     submit = SubmitField("Add to minutes")

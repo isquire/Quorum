@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 
 from ..extensions import db
 from ..models import Meeting, MeetingStatus, Role
-from ..permissions import role_required
+from ..permissions import SECRETARY_ROLES, role_required
 from ..utils import now_eastern
 from . import bp
 
@@ -27,7 +27,11 @@ def list_minutes():
 @login_required
 def detail(meeting_id: int):
     meeting = Meeting.query.get_or_404(meeting_id)
-    return render_template("minutes/detail.html", meeting=meeting)
+    return render_template(
+        "minutes/detail.html",
+        meeting=meeting,
+        secretary_roles=SECRETARY_ROLES,
+    )
 
 
 @bp.route("/<int:meeting_id>/approve", methods=["POST"])
@@ -56,11 +60,24 @@ def export_text(meeting_id: int):
     for a in meeting.attendances:
         status = "present" if a.is_present else "absent"
         lines.append(f"  - {a.user.full_name} ({status})")
+    can_view_confidential = current_user.role.value in SECRETARY_ROLES
+    has_confidential = any(e.is_confidential for e in meeting.minutes_entries)
+
+    if has_confidential and not can_view_confidential:
+        lines.append("")
+        lines.append(
+            "NOTE: Some proceedings are marked confidential and have been"
+        )
+        lines.append("redacted from this copy.")
+
     lines.append("")
     lines.append("Proceedings:")
     for entry in meeting.minutes_entries:
         ts = entry.timestamp.strftime("%H:%M")
-        lines.append(f"  [{ts}] {entry.text}")
+        if entry.is_confidential and not can_view_confidential:
+            lines.append(f"  [{ts}] [CONFIDENTIAL — content restricted to officers]")
+        else:
+            lines.append(f"  [{ts}] {entry.text}")
     body = "\n".join(lines) + "\n"
     return Response(
         body,

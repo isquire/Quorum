@@ -56,6 +56,7 @@ def create_item(meeting_id: int):
         title=form.title.data.strip(),
         description=(form.description.data or "").strip(),
         presenter_id=presenter_id,
+        is_confidential=form.is_confidential.data,
     )
     db.session.add(item)
     db.session.commit()

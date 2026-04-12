@@ -794,6 +794,7 @@ class AgendaItem(TimestampMixin, db.Model):
     )
     title = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=False, default="")
+    is_confidential = db.Column(db.Boolean, nullable=False, default=False)
     presenter_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
     status = db.Column(
         db.Enum(AgendaItemStatus, native_enum=False),
@@ -975,6 +976,7 @@ class MinutesEntry(TimestampMixin, db.Model):
         db.Integer, db.ForeignKey("agenda_items.id"), nullable=True
     )
     text = db.Column(db.Text, nullable=False)
+    is_confidential = db.Column(db.Boolean, nullable=False, default=False)
     is_edited = db.Column(db.Boolean, nullable=False, default=False)
 
     meeting = db.relationship("Meeting", back_populates="minutes_entries")

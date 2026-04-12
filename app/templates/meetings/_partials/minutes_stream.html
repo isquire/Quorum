@@ -3,7 +3,12 @@
   <ul class="list-group list-group-flush small" style="max-height: 70vh; overflow-y: auto;">
     {% for entry in meeting.minutes_entries|reverse %}
     <li class="list-group-item">
-      <div class="text-muted small">{{ entry.timestamp.strftime('%H:%M:%S') }}</div>
+      <div class="text-muted small">
+        {{ entry.timestamp.strftime('%H:%M:%S') }}
+        {% if entry.is_confidential %}
+          <span class="badge bg-dark ms-1">confidential</span>
+        {% endif %}
+      </div>
       <div>{{ entry.text }}</div>
     </li>
     {% else %}

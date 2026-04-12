@@ -50,10 +50,20 @@
     <div class="card shadow-sm">
       <div class="card-header">Proceedings ({{ meeting.minutes_entries|length }} entries)</div>
       <ol class="list-group list-group-flush">
+        {% set can_view_confidential = current_user.role.value in secretary_roles %}
         {% for entry in meeting.minutes_entries %}
         <li class="list-group-item">
-          <div class="text-muted small">{{ entry.timestamp.strftime('%H:%M:%S') }} &middot; {{ entry.entry_type.value.replace('_',' ') }}</div>
-          <div>{{ entry.text }}</div>
+          <div class="text-muted small">
+            {{ entry.timestamp.strftime('%H:%M:%S') }} &middot; {{ entry.entry_type.value.replace('_',' ') }}
+            {% if entry.is_confidential and can_view_confidential %}
+              <span class="badge bg-dark ms-1">confidential</span>
+            {% endif %}
+          </div>
+          {% if entry.is_confidential and not can_view_confidential %}
+            <div class="text-muted fst-italic">[CONFIDENTIAL &mdash; content restricted to officers]</div>
+          {% else %}
+            <div>{{ entry.text }}</div>
+          {% endif %}
         </li>
         {% else %}
         <li class="list-group-item text-muted">No entries recorded.</li>

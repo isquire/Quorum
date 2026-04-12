@@ -15,6 +15,7 @@
           <div>
             <strong>{{ item.title }}</strong>
             <span class="badge bg-light text-dark">{{ item.category.value.replace('_',' ') }}</span>
+            {% if item.is_confidential %}<span class="badge bg-dark">confidential</span>{% endif %}
             {% if item.presenter %}
               <span class="text-muted small">· presenter: {{ item.presenter.full_name }}</span>
             {% endif %}
@@ -57,6 +58,7 @@
           {{ render_field(form.category) }}
           {{ render_field(form.description) }}
           {{ render_field(form.presenter_id) }}
+          {{ render_field(form.is_confidential, help="Minutes entries recorded under this item will be redacted for non-officers.") }}
           {{ form.submit(class="btn btn-primary") }}
         </form>
       </div>
