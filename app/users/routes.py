@@ -1,13 +1,16 @@
 import csv
 import io
+import shutil
+from pathlib import Path
 
-from flask import flash, make_response, redirect, render_template, request, url_for
+from flask import current_app, flash, make_response, redirect, render_template, request, send_file, url_for
 from flask_login import current_user
 
 from ..admin_log import log_admin_action
 from ..extensions import db
 from ..models import AdminAction, Role, User
 from ..permissions import admin_required
+from ..utils import now_eastern
 from . import bp
 from .forms import CsvUploadForm, ResetPasswordForm, UserCreateForm, UserEditForm
 
@@ -324,3 +327,84 @@ def admin_log():
         actions=pagination.items,
         pagination=pagination,
     )
+
+
+# ---------------------------------------------------------------------------
+# Database backup & restore
+# ---------------------------------------------------------------------------
+
+
+def _get_db_path() -> Path | None:
+    """Extract the SQLite file path from the database URI."""
+    uri = current_app.config.get("SQLALCHEMY_DATABASE_URI", "")
+    if "sqlite:///" not in uri:
+        return None
+    # sqlite:////absolute/path or sqlite:///relative/path
+    raw = uri.split("sqlite:///", 1)[1]
+    return Path(raw)
+
+
+@bp.route("/backup-db")
+@admin_required
+def backup_db():
+    """Download a copy of the SQLite database."""
+    db_path = _get_db_path()
+    if db_path is None or not db_path.exists():
+        flash("Database backup is only available for SQLite databases.", "warning")
+        return redirect(url_for("users.list_users"))
+    stamp = now_eastern().strftime("%Y%m%d-%H%M%S")
+    log_admin_action(
+        current_user.id, "backup_database", "system", None,
+        "Downloaded database backup.",
+    )
+    db.session.commit()
+    return send_file(
+        db_path,
+        as_attachment=True,
+        download_name=f"quorum-backup-{stamp}.db",
+        mimetype="application/x-sqlite3",
+    )
+
+
+@bp.route("/restore-db", methods=["GET", "POST"])
+@admin_required
+def restore_db():
+    """Upload a SQLite database to replace the current one."""
+    if request.method == "POST":
+        file = request.files.get("db_file")
+        if not file or not file.filename:
+            flash("No file selected.", "danger")
+            return render_template("users/restore_db.html")
+
+        db_path = _get_db_path()
+        if db_path is None:
+            flash("Database restore is only available for SQLite databases.", "warning")
+            return redirect(url_for("users.list_users"))
+
+        # Read uploaded file into memory.
+        data = file.read()
+
+        # Validate it looks like SQLite (magic header).
+        if data[:16] != b"SQLite format 3\x00":
+            flash("The uploaded file does not appear to be a valid SQLite database.", "danger")
+            return render_template("users/restore_db.html")
+
+        # Back up the current DB before replacing.
+        stamp = now_eastern().strftime("%Y%m%d-%H%M%S")
+        backup_path = db_path.parent / f"quorum-pre-restore-{stamp}.db"
+        if db_path.exists():
+            shutil.copy2(db_path, backup_path)
+
+        # Close all connections, write the new file.
+        db.session.remove()
+        db.engine.dispose()
+        db_path.write_bytes(data)
+
+        flash(
+            f"Database restored successfully. Previous database saved as {backup_path.name}. "
+            "Please restart the application for changes to take full effect.",
+            "success",
+        )
+        return redirect(url_for("users.list_users"))
+
+    return render_template("users/restore_db.html")

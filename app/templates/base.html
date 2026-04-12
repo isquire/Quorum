@@ -22,12 +22,21 @@
       <ul class="navbar-nav me-auto">
         <li class="nav-item"><a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('meetings.list_meetings') }}">Meetings</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('meetings.list_templates') }}">Templates</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('minutes.list_minutes') }}">Minutes</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.list_reports') }}">Reports</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('boards.list_boards') }}">Boards</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('documents.list_documents') }}">Documents</a></li>
         {% if current_user.role.value == 'admin' %}
         <li class="nav-item"><a class="nav-link" href="{{ url_for('users.list_users') }}">Users</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('users.admin_log') }}">Admin log</a></li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">Admin tools</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('users.backup_db') }}">Download backup</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('users.restore_db') }}">Restore database</a></li>
+          </ul>
+        </li>
         {% endif %}
         <li class="nav-item"><a class="nav-link" href="{{ url_for('main.guide') }}">Guide</a></li>
       </ul>

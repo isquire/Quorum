@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }} v{{ ver.version }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="h3 mb-1">{{ doc.title }} &mdash; Version {{ ver.version }}</h1>
+    <div class="text-muted small">
+      Edited by {{ ver.edited_by.full_name }}
+      {% if ver.created_at %}on {{ ver.created_at.strftime('%b %d, %Y %H:%M') }}{% endif %}
+      {% if ver.change_summary %}&middot; {{ ver.change_summary }}{% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('documents.view_history', doc_id=doc.id) }}">&larr; History</a>
+    <a class="btn btn-outline-primary btn-sm" href="{{ url_for('documents.view_document', doc_id=doc.id) }}">Current version</a>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div style="white-space: pre-wrap;">{{ ver.content }}</div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}New Template{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3">New Meeting Template</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('meetings.list_templates') }}">&larr; Templates</a>
+</div>
+
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label" for="name">Template name</label>
+        <input type="text" class="form-control" id="name" name="name" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="description">Description (optional)</label>
+        <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      Agenda items
+      <button type="button" class="btn btn-sm btn-outline-primary" onclick="addItem()">+ Add item</button>
+    </div>
+    <div class="card-body" id="items-container">
+      <div class="text-muted small" id="no-items-msg">Click "Add item" to add agenda items to this template.</div>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Create template</button>
+</form>
+
+{% block scripts %}
+<script>
+let itemIndex = 0;
+function addItem() {
+  document.getElementById('no-items-msg').style.display = 'none';
+  const container = document.getElementById('items-container');
+  const div = document.createElement('div');
+  div.className = 'border rounded p-3 mb-3';
+  div.innerHTML = `
+    <div class="row g-2">
+      <div class="col-md-5">
+        <input type="text" class="form-control form-control-sm" name="item_title_${itemIndex}" placeholder="Title" required>
+      </div>
+      <div class="col-md-3">
+        <select class="form-select form-select-sm" name="item_category_${itemIndex}">
+          <option value="minutes_approval">Approval of minutes</option>
+          <option value="report">Report</option>
+          <option value="unfinished_business">Unfinished business</option>
+          <option value="new_business" selected>New business</option>
+          <option value="announcement">Announcement</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <input type="text" class="form-control form-control-sm" name="item_desc_${itemIndex}" placeholder="Description (optional)">
+      </div>
+      <div class="col-md-1 text-end">
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.border').remove()">X</button>
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+  itemIndex++;
+}
+</script>
+{% endblock %}
+{% endblock %}

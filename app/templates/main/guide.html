@@ -30,7 +30,15 @@
           <a class="list-group-item list-group-item-action" href="#archiving">21. Archiving meetings &amp; reports</a>
           <a class="list-group-item list-group-item-action" href="#admin-log">22. Admin action log</a>
           <a class="list-group-item list-group-item-action" href="#csv-users">23. Bulk user management (CSV)</a>
-          <a class="list-group-item list-group-item-action" href="#tips">24. Tips &amp; pitfalls</a>
+          <a class="list-group-item list-group-item-action" href="#dashboard">24. Role-based dashboard</a>
+          <a class="list-group-item list-group-item-action" href="#meeting-templates">25. Meeting templates</a>
+          <a class="list-group-item list-group-item-action" href="#minutes-print">26. Printing &amp; exporting minutes</a>
+          <a class="list-group-item list-group-item-action" href="#documents">27. Document repository</a>
+          <a class="list-group-item list-group-item-action" href="#annual-report">28. Annual report</a>
+          <a class="list-group-item list-group-item-action" href="#term-calendar">29. Term expiration calendar</a>
+          <a class="list-group-item list-group-item-action" href="#backup-restore">30. Database backup &amp; restore</a>
+          <a class="list-group-item list-group-item-action" href="#board-management">31. Board membership management</a>
+          <a class="list-group-item list-group-item-action" href="#tips">32. Tips &amp; pitfalls</a>
           <a class="list-group-item list-group-item-action" href="#quick-ref">Quick reference</a>
         </nav>
       </div>
@@ -893,8 +901,200 @@
       </ul>
     </section>
 
+    <section id="dashboard" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">24. Role-based dashboard</h2>
+      <p>The home page adapts to your role, showing only the information relevant to you.</p>
+
+      <h5>Admin view</h5>
+      <ul>
+        <li><strong>Stat cards</strong> at the top: total users, active users, upcoming meetings, and pending reports.</li>
+        <li><strong>Recent admin actions</strong> &mdash; the last 10 entries from the <a href="#admin-log">admin action log</a>.</li>
+      </ul>
+
+      <h5>Secretary / Chair view</h5>
+      <ul>
+        <li><strong>Minutes awaiting approval</strong> &mdash; a list of adjourned meetings whose minutes have not yet been approved. Click a meeting to review and approve.</li>
+      </ul>
+
+      <h5>All roles</h5>
+      <ul>
+        <li><strong>Upcoming meetings</strong> &mdash; the next 5 scheduled meetings.</li>
+        <li><strong>Recent minutes</strong> &mdash; the 5 most recently adjourned meetings with quick links.</li>
+        <li><strong>Expiring terms</strong> (if any) &mdash; board service terms expiring within 6 months.</li>
+      </ul>
+    </section>
+
+    <section id="meeting-templates" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">25. Meeting templates</h2>
+      <p>Templates let you save a standard agenda structure and reuse it for future meetings. This saves time when your meetings follow a recurring format.</p>
+
+      <h5>Creating a template from scratch</h5>
+      <ol>
+        <li>Go to <strong>Meetings &rarr; Templates</strong>.</li>
+        <li>Click <strong>New template</strong>.</li>
+        <li>Give it a name (e.g., &ldquo;Standard Board Meeting&rdquo;) and optionally a description.</li>
+        <li>Add agenda items with a title and category for each. Click <strong>+ Add item</strong> to add more.</li>
+        <li>Click <strong>Create template</strong>.</li>
+      </ol>
+
+      <h5>Saving a meeting&rsquo;s agenda as a template</h5>
+      <ol>
+        <li>Open any meeting that already has an agenda built.</li>
+        <li>In the agenda section, click <strong>Save as template</strong>.</li>
+        <li>Enter a template name and submit. All agenda items are copied into the new template.</li>
+      </ol>
+
+      <h5>Applying a template to a meeting</h5>
+      <ol>
+        <li>Open the agenda editor for a meeting.</li>
+        <li>Under <strong>Apply a template</strong>, select the template and click <strong>Apply</strong>.</li>
+        <li>The template&rsquo;s items are added to the meeting&rsquo;s agenda (existing items are kept).</li>
+      </ol>
+
+      <h5>Managing templates</h5>
+      <ul>
+        <li>View any template to see its items.</li>
+        <li>Admins can delete templates that are no longer needed.</li>
+      </ul>
+    </section>
+
+    <section id="minutes-print" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">26. Printing &amp; exporting minutes</h2>
+      <p>You can produce a clean, print-ready copy of meeting minutes for filing or distribution.</p>
+
+      <ol>
+        <li>Open the minutes for any adjourned meeting.</li>
+        <li>Click the <strong>Print / PDF</strong> button.</li>
+        <li>A printer-friendly view opens with church branding, meeting details, attendance table, and all proceedings.</li>
+        <li>Click <strong>Print / Save as PDF</strong> to trigger your browser&rsquo;s print dialog. Choose &ldquo;Save as PDF&rdquo; as the destination to create a PDF file.</li>
+      </ol>
+      <p class="text-muted small">
+        The print view hides navigation, buttons, and other screen-only elements automatically. Confidential items are included only for authorized officers.
+      </p>
+    </section>
+
+    <section id="documents" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">27. Document repository</h2>
+      <p>The document repository stores governing documents&mdash;bylaws, constitution, policies, standing rules, and forms&mdash;with full version history.</p>
+
+      <h5>Viewing documents</h5>
+      <ul>
+        <li>Go to <strong>Documents</strong> in the navigation bar.</li>
+        <li>Filter by category using the buttons at the top (Bylaws, Constitution, Policy, etc.).</li>
+        <li>Click a document to read its current content.</li>
+        <li>Click <strong>History</strong> to see every past version with change summaries.</li>
+      </ul>
+
+      <h5>Creating a document (admin only)</h5>
+      <ol>
+        <li>Click <strong>+ New document</strong>.</li>
+        <li>Enter a title, select a category, and type or paste the content.</li>
+        <li>Click <strong>Create document</strong>. An initial version (v1) is saved automatically.</li>
+      </ol>
+
+      <h5>Editing a document (admin only)</h5>
+      <ol>
+        <li>Open the document and click <strong>Edit</strong>.</li>
+        <li>Make changes and optionally add a change summary (e.g., &ldquo;Updated Article III&rdquo;).</li>
+        <li>Click <strong>Save changes</strong>. A new version is created; the previous version is preserved in history.</li>
+      </ol>
+
+      <h5>Version history</h5>
+      <ul>
+        <li>Every edit creates a new version. You can view any past version to see exactly what the document contained at that point.</li>
+        <li>The current version is highlighted in the history table.</li>
+      </ul>
+
+      <p class="text-muted small">All document create/edit/delete actions are recorded in the <a href="#admin-log">admin action log</a>.</p>
+    </section>
+
+    <section id="annual-report" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">28. Annual report</h2>
+      <p>The annual report compiles a year&rsquo;s worth of governance data into a single summary page. This is useful for annual business meetings or denominational reporting.</p>
+
+      <ol>
+        <li>Go to <strong>Admin tools &rarr; Annual report</strong> (admin only).</li>
+        <li>Select the year using the dropdown or URL parameter (e.g., <code>?year=2026</code>).</li>
+      </ol>
+
+      <h5>What the report includes</h5>
+      <ul>
+        <li><strong>Meeting statistics</strong> &mdash; total meetings held, broken down by type (regular, annual business, special, etc.).</li>
+        <li><strong>Motion outcomes</strong> &mdash; number of motions passed and failed.</li>
+        <li><strong>Reports submitted</strong> &mdash; count of officer/committee reports filed during the year.</li>
+        <li><strong>Service terms</strong> &mdash; terms started and ended during the year.</li>
+        <li><strong>Membership</strong> &mdash; total and active user counts.</li>
+        <li><strong>Attendance</strong> &mdash; per-member attendance rates with visual progress bars, sorted by attendance percentage.</li>
+        <li><strong>Meeting list</strong> &mdash; every meeting in the year with date, type, and status.</li>
+      </ul>
+    </section>
+
+    <section id="term-calendar" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">29. Term expiration calendar</h2>
+      <p>A visual timeline of all active board service terms grouped by expiration month, helping you plan ahead for elections and transitions.</p>
+
+      <ol>
+        <li>Go to <strong>Boards</strong> and click <strong>Term expiration calendar</strong>.</li>
+      </ol>
+
+      <h5>Color coding</h5>
+      <ul>
+        <li><span class="text-danger fw-bold">Red</span> &mdash; term has already expired (past due).</li>
+        <li><span class="text-warning fw-bold">Yellow</span> &mdash; term expires within 6 months.</li>
+        <li>Normal &mdash; more than 6 months until expiration.</li>
+      </ul>
+
+      <h5>Cooldown tracking</h5>
+      <p>Members who have served the maximum consecutive terms for their role are shown in a separate &ldquo;In cooldown&rdquo; section with their eligibility date.</p>
+    </section>
+
+    <section id="backup-restore" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">30. Database backup &amp; restore</h2>
+      <p>Admins can download a full backup of the SQLite database and restore from a previous backup.</p>
+
+      <h5>Creating a backup</h5>
+      <ol>
+        <li>Go to <strong>Admin tools &rarr; Backup database</strong>.</li>
+        <li>A <code>.sqlite</code> file downloads to your computer. Store it somewhere safe.</li>
+      </ol>
+
+      <h5>Restoring from a backup</h5>
+      <ol>
+        <li>Go to <strong>Admin tools &rarr; Restore database</strong>.</li>
+        <li>Upload a previously downloaded <code>.sqlite</code> backup file.</li>
+        <li>The system validates the file format, creates a safety backup of the current database, then replaces it with the uploaded file.</li>
+      </ol>
+
+      <div class="alert alert-warning small">
+        <strong>Warning:</strong> Restoring a database replaces <em>all</em> current data with the backup&rsquo;s contents. Any changes made after the backup was taken will be lost. A safety copy of the current database is saved automatically before the restore.
+      </div>
+    </section>
+
+    <section id="board-management" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">31. Board membership management</h2>
+      <p>Admins can manage who sits on each board and edit service term records directly.</p>
+
+      <h5>Managing board members</h5>
+      <ol>
+        <li>Go to <strong>Boards</strong> and select a board (e.g., Board of Deacons).</li>
+        <li>The <strong>Board members</strong> table shows current members with their role and voting status.</li>
+        <li>Click <strong>+ Add member</strong> to add a user to the board. Select the user, role, and voting status.</li>
+        <li>Click <strong>Edit</strong> on any member to change their role or voting status.</li>
+        <li>Click <strong>Remove</strong> to remove a member from the board (with confirmation).</li>
+      </ol>
+
+      <h5>Editing service terms</h5>
+      <ol>
+        <li>On the board detail page, find the term in the <strong>Current service terms</strong> or <strong>Past terms</strong> table.</li>
+        <li>Click <strong>Edit</strong> to modify the term start date, end date, status, or notes.</li>
+        <li>This is useful for correcting data entry errors or adjusting dates after a governance decision.</li>
+      </ol>
+
+      <p class="text-muted small">All board membership and term changes are recorded in the <a href="#admin-log">admin action log</a>.</p>
+    </section>
+
     <section id="tips" class="mb-5">
-      <h2 class="h4 border-bottom pb-2">24. Tips &amp; pitfalls</h2>
+      <h2 class="h4 border-bottom pb-2">32. Tips &amp; pitfalls</h2>
       <ul>
         <li><strong>One browser per person.</strong> Every attending board member should have Quorum open on their own device so they can second motions and cast their own votes.</li>
         <li><strong>Don&rsquo;t forget to open the vote.</strong> A common slip-up: chair discusses a motion and then tries to advance without opening the vote. The motion stays on the floor and blocks advancement.</li>
@@ -976,9 +1176,14 @@ At the <em>next</em> meeting &rarr; Chair approves minutes &rarr; record locked
 <strong>ONGOING ADMIN</strong>
 <div class="ms-3">
 <table class="table table-sm table-borderless mb-0" style="max-width:520px;">
-  <tr><td style="width:160px;">Manage users</td><td class="text-muted">Create, edit, remove/restore, reset passwords</td></tr>
+  <tr><td style="width:160px;">Manage users</td><td class="text-muted">Create, edit, remove/restore, reset passwords, bulk CSV</td></tr>
   <tr><td>Track board terms</td><td class="text-muted">Record elections, monitor expirations &amp; cooldowns</td></tr>
+  <tr><td>Manage boards</td><td class="text-muted">Add/edit/remove members, edit service terms</td></tr>
+  <tr><td>Documents</td><td class="text-muted">Store bylaws, policies, constitution with version history</td></tr>
+  <tr><td>Meeting templates</td><td class="text-muted">Save &amp; reuse standard agenda structures</td></tr>
   <tr><td>Archive old items</td><td class="text-muted">Hide test/obsolete meetings &amp; reports (restorable)</td></tr>
+  <tr><td>Backup / restore</td><td class="text-muted">Download database backup, restore from file</td></tr>
+  <tr><td>Annual report</td><td class="text-muted">Yearly governance summary with stats</td></tr>
   <tr><td>Review admin log</td><td class="text-muted">Audit trail of every admin action</td></tr>
 </table>
 </div>

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="h3 mb-1">{{ doc.title }}</h1>
+    <div class="text-muted small">
+      <span class="badge bg-secondary">{{ doc.category.value.replace('_', ' ').title() }}</span>
+      Version {{ doc.current_version }}
+      &middot; Updated by {{ doc.updated_by.full_name }}
+      {% if doc.updated_at %}on {{ doc.updated_at.strftime('%b %d, %Y') }}{% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('documents.view_history', doc_id=doc.id) }}">History ({{ doc.versions|length }})</a>
+    {% if current_user.role.value == 'admin' %}
+    <a class="btn btn-outline-primary btn-sm" href="{{ url_for('documents.edit_document', doc_id=doc.id) }}">Edit</a>
+    <form method="post" action="{{ url_for('documents.delete_document', doc_id=doc.id) }}" class="d-inline"
+          onsubmit="return confirm('Delete this document and all its versions?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button class="btn btn-outline-danger btn-sm">Delete</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div style="white-space: pre-wrap;">{{ doc.content }}</div>
+  </div>
+</div>
+
+<a class="btn btn-outline-secondary mt-3" href="{{ url_for('documents.list_documents') }}">&larr; All documents</a>
+{% endblock %}

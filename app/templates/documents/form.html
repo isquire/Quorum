@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{% if action == 'edit' %}Edit {{ doc.title }}{% else %}New Document{% endif %}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3">{% if action == 'edit' %}Edit document{% else %}New document{% endif %}</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('documents.list_documents') }}">&larr; Documents</a>
+</div>
+
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="mb-3">
+        <label class="form-label" for="title">Title</label>
+        <input type="text" class="form-control" id="title" name="title"
+               value="{{ doc.title if doc is defined and doc else '' }}" required>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="mb-3">
+        <label class="form-label" for="category">Category</label>
+        <select class="form-select" id="category" name="category">
+          {% for c in categories %}
+          <option value="{{ c.value }}"
+                  {% if doc is defined and doc and doc.category == c %}selected{% endif %}>
+            {{ c.value.replace('_', ' ').title() }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label" for="content">Content</label>
+    <textarea class="form-control" id="content" name="content" rows="20">{{ doc.content if doc is defined and doc else '' }}</textarea>
+  </div>
+
+  {% if action == 'edit' %}
+  <div class="mb-3">
+    <label class="form-label" for="change_summary">Change summary (optional)</label>
+    <input type="text" class="form-control" id="change_summary" name="change_summary"
+           placeholder="Brief description of what changed">
+  </div>
+  {% endif %}
+
+  <button type="submit" class="btn btn-primary">
+    {% if action == 'edit' %}Save changes{% else %}Create document{% endif %}
+  </button>
+</form>
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Annual Report {{ year }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3">Annual Report &mdash; {{ year }}</h1>
+  <div class="d-flex gap-2 align-items-center">
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.annual_report', year=year - 1) }}">&larr; {{ year - 1 }}</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.annual_report', year=year + 1) }}">{{ year + 1 }} &rarr;</a>
+    <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">Print</button>
+  </div>
+</div>
+
+{# ── Summary cards ── #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card shadow-sm text-center py-3">
+      <div class="h4 mb-0">{{ meeting_count }}</div>
+      <div class="text-muted small">Meetings held</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card shadow-sm text-center py-3">
+      <div class="h4 mb-0">{{ motions_passed + motions_failed }}</div>
+      <div class="text-muted small">Motions voted</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card shadow-sm text-center py-3">
+      <div class="h4 mb-0">{{ attendance_rate }}%</div>
+      <div class="text-muted small">Avg. attendance</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card shadow-sm text-center py-3">
+      <div class="h4 mb-0">{{ reports_count }}</div>
+      <div class="text-muted small">Reports submitted</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  {# ── Meeting type breakdown ── #}
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header">Meetings by type</div>
+      <ul class="list-group list-group-flush">
+        {% for label, count in type_counts.items() %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>{{ label }}</span>
+          <span class="badge bg-primary rounded-pill">{{ count }}</span>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">No meetings held.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  {# ── Motions ── #}
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header">Motions</div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Passed</span>
+          <span class="badge bg-success rounded-pill">{{ motions_passed }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Failed</span>
+          <span class="badge bg-danger rounded-pill">{{ motions_failed }}</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  {# ── Service terms ── #}
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header">Service terms</div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Terms started</span>
+          <span class="badge bg-info text-dark rounded-pill">{{ terms_started }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Terms ended</span>
+          <span class="badge bg-secondary rounded-pill">{{ terms_ended }}</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  {# ── User stats ── #}
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header">Membership</div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Total users</span>
+          <span>{{ total_users }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between">
+          <span>Active users</span>
+          <span>{{ active_users }}</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  {# ── Attendance by member ── #}
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header">Attendance by member</div>
+      {% if attendance_list %}
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr><th>Name</th><th>Present</th><th>Total meetings</th><th>Rate</th></tr>
+          </thead>
+          <tbody>
+            {% for row in attendance_list %}
+            {% set rate = (row.present / row.total * 100)|round(0)|int if row.total > 0 else 0 %}
+            <tr>
+              <td>{{ row.user.full_name }}</td>
+              <td>{{ row.present }}</td>
+              <td>{{ row.total }}</td>
+              <td>
+                <div class="progress" style="min-width:100px; height: 20px;">
+                  <div class="progress-bar{% if rate >= 80 %} bg-success{% elif rate >= 50 %} bg-warning{% else %} bg-danger{% endif %}"
+                       style="width: {{ rate }}%;">{{ rate }}%</div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="card-body text-muted">No attendance data for {{ year }}.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Meeting list ── #}
+  {% if meetings %}
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header">All meetings in {{ year }}</div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr><th>Date</th><th>Title</th><th>Type</th><th>Present</th><th>Quorum</th></tr>
+          </thead>
+          <tbody>
+            {% for m in meetings %}
+            <tr>
+              <td>{{ m.scheduled_start.strftime('%b %d') }}</td>
+              <td><a href="{{ url_for('minutes.detail', meeting_id=m.id) }}">{{ m.title }}</a></td>
+              <td class="small">{{ m.meeting_type.value.replace('_', ' ').title() }}</td>
+              <td>{{ m.present_count }}/{{ m.voting_member_count }}</td>
+              <td>{% if m.has_quorum %}<span class="text-success">Yes</span>{% else %}<span class="text-danger">No</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -3,7 +3,7 @@ from flask_login import login_required
 
 from ..extensions import db
 from ..meetings.forms import AgendaItemForm
-from ..models import AgendaCategory, AgendaItem, Meeting, Role, User
+from ..models import AgendaCategory, AgendaItem, Meeting, MeetingTemplate, Role, User
 from ..permissions import role_required
 from . import bp
 
@@ -29,8 +29,10 @@ def view_agenda(meeting_id: int):
     meeting = _load_meeting(meeting_id)
     form = AgendaItemForm()
     _populate_presenters(form)
+    meeting_templates = MeetingTemplate.query.order_by(MeetingTemplate.name).all()
     return render_template(
-        "agendas/edit.html", meeting=meeting, form=form
+        "agendas/edit.html", meeting=meeting, form=form,
+        meeting_templates=meeting_templates,
     )
 
 

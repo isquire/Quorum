@@ -4,12 +4,16 @@ from flask_login import current_user, login_required
 from ..admin_log import log_admin_action
 from ..extensions import db
 from ..models import (
+    AgendaCategory,
+    AgendaItem,
     Board,
     BoardMembership,
     Meeting,
     MeetingAttendance,
     MeetingStage,
     MeetingStatus,
+    MeetingTemplate,
+    MeetingTemplateItem,
     MeetingType,
     Role,
     RsvpStatus,
@@ -282,3 +286,140 @@ def unarchive_meeting(meeting_id: int):
     db.session.commit()
     flash("Meeting restored from archive.", "success")
     return redirect(url_for("meetings.list_meetings"))
+
+
+# ---------------------------------------------------------------------------
+# Meeting Templates
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/templates")
+@login_required
+def list_templates():
+    templates = (
+        MeetingTemplate.query
+        .order_by(MeetingTemplate.name)
+        .all()
+    )
+    return render_template("meetings/templates.html", templates=templates)
+
+
+@bp.route("/templates/new", methods=["GET", "POST"])
+@role_required(Role.chair, Role.vice_chair, Role.secretary, Role.pastor)
+def create_template():
+    if request.method == "POST":
+        name = (request.form.get("name") or "").strip()
+        description = (request.form.get("description") or "").strip()
+        if not name:
+            flash("Template name is required.", "danger")
+            return render_template("meetings/template_form.html", action="new")
+
+        template = MeetingTemplate(
+            name=name,
+            description=description,
+            created_by_id=current_user.id,
+        )
+        db.session.add(template)
+        db.session.flush()
+
+        # Parse items from form.
+        idx = 0
+        while f"item_title_{idx}" in request.form:
+            title = (request.form.get(f"item_title_{idx}") or "").strip()
+            category = request.form.get(f"item_category_{idx}", "new_business")
+            if title:
+                item = MeetingTemplateItem(
+                    template_id=template.id,
+                    order_index=idx,
+                    category=AgendaCategory(category),
+                    title=title,
+                    description=(request.form.get(f"item_desc_{idx}") or "").strip(),
+                    is_confidential=bool(request.form.get(f"item_confidential_{idx}")),
+                )
+                db.session.add(item)
+            idx += 1
+
+        db.session.commit()
+        flash(f'Template "{name}" created.', "success")
+        return redirect(url_for("meetings.list_templates"))
+
+    return render_template("meetings/template_form.html", action="new")
+
+
+@bp.route("/templates/<int:template_id>")
+@login_required
+def view_template(template_id: int):
+    template = MeetingTemplate.query.get_or_404(template_id)
+    return render_template("meetings/template_detail.html", template=template)
+
+
+@bp.route("/templates/<int:template_id>/delete", methods=["POST"])
+@admin_required
+def delete_template(template_id: int):
+    template = MeetingTemplate.query.get_or_404(template_id)
+    name = template.name
+    db.session.delete(template)
+    db.session.commit()
+    flash(f'Template "{name}" deleted.', "info")
+    return redirect(url_for("meetings.list_templates"))
+
+
+@bp.route("/<int:meeting_id>/save-as-template", methods=["POST"])
+@role_required(Role.chair, Role.vice_chair, Role.secretary, Role.pastor)
+def save_as_template(meeting_id: int):
+    """Save an existing meeting's agenda as a template."""
+    meeting = Meeting.query.get_or_404(meeting_id)
+    name = request.form.get("template_name", "").strip()
+    if not name:
+        name = f"Template from {meeting.title}"
+
+    template = MeetingTemplate(
+        name=name,
+        description=f"Created from meeting: {meeting.title}",
+        meeting_type=meeting.meeting_type,
+        created_by_id=current_user.id,
+    )
+    db.session.add(template)
+    db.session.flush()
+
+    for item in meeting.agenda_items:
+        db.session.add(MeetingTemplateItem(
+            template_id=template.id,
+            order_index=item.order_index,
+            category=item.category,
+            title=item.title,
+            description=item.description or "",
+            is_confidential=item.is_confidential,
+        ))
+
+    db.session.commit()
+    flash(f'Saved agenda as template "{name}".', "success")
+    return redirect(url_for("meetings.meeting_detail", meeting_id=meeting_id))
+
+
+@bp.route("/<int:meeting_id>/apply-template", methods=["POST"])
+@role_required(Role.chair, Role.vice_chair, Role.secretary, Role.pastor)
+def apply_template(meeting_id: int):
+    """Apply a template's agenda items to a meeting."""
+    meeting = Meeting.query.get_or_404(meeting_id)
+    template_id = request.form.get("template_id", type=int)
+    if not template_id:
+        flash("No template selected.", "warning")
+        return redirect(url_for("agendas.view_agenda", meeting_id=meeting_id))
+
+    template = MeetingTemplate.query.get_or_404(template_id)
+    max_order = max((i.order_index for i in meeting.agenda_items), default=0)
+
+    for item in template.items:
+        db.session.add(AgendaItem(
+            meeting_id=meeting.id,
+            order_index=max_order + item.order_index + 1,
+            category=item.category,
+            title=item.title,
+            description=item.description,
+            is_confidential=item.is_confidential,
+        ))
+
+    db.session.commit()
+    flash(f'Applied template "{template.name}" ({len(template.items)} items).', "success")
+    return redirect(url_for("agendas.view_agenda", meeting_id=meeting_id))

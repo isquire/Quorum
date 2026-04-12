@@ -4,7 +4,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h3">Welcome, {{ current_user.full_name }}</h1>
-  {% if current_user.role.value in ['chair', 'vice_chair', 'admin', 'pastor'] %}
+  {% if current_user.role.value in chair_roles %}
   <a class="btn btn-primary" href="{{ url_for('meetings.create_meeting') }}">
     + New meeting
   </a>
@@ -27,6 +27,36 @@
     </li>
     {% endfor %}
   </ul>
+</div>
+{% endif %}
+
+{# ── Admin system stats ── #}
+{% if total_users is not none %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card shadow-sm text-center py-3">
+      <div class="h4 mb-0">{{ total_users }}</div>
+      <div class="text-muted small">Total users</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card shadow-sm text-center py-3">
+      <div class="h4 mb-0">{{ active_users }}</div>
+      <div class="text-muted small">Active users</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card shadow-sm text-center py-3">
+      <div class="h4 mb-0">{{ upcoming|length }}</div>
+      <div class="text-muted small">Upcoming meetings</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card shadow-sm text-center py-3">
+      <div class="h4 mb-0">{{ (pending_reports or [])|length }}</div>
+      <div class="text-muted small">Pending reports</div>
+    </div>
+  </div>
 </div>
 {% endif %}
 
@@ -66,6 +96,28 @@
     </div>
   </div>
 
+  {# ── Secretary/Chair: unapproved minutes ── #}
+  {% if unapproved_minutes %}
+  <div class="col-md-6">
+    <div class="card shadow-sm border-warning">
+      <div class="card-header bg-warning text-dark">Minutes awaiting approval</div>
+      <ul class="list-group list-group-flush">
+        {% for m in unapproved_minutes %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <a href="{{ url_for('minutes.detail', meeting_id=m.id) }}">{{ m.title }}</a>
+            <div class="text-muted small">{{ m.adjourned_at.strftime('%Y-%m-%d') if m.adjourned_at }}</div>
+          </div>
+          <span class="badge bg-warning text-dark">Pending</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Secretary/Admin: pending reports ── #}
+  {% if pending_reports %}
   <div class="col-md-6">
     <div class="card shadow-sm">
       <div class="card-header">Pending reports</div>
@@ -75,13 +127,13 @@
           <a href="{{ url_for('reports.detail', report_id=r.id) }}">{{ r.title }}</a>
           <span class="badge bg-info text-dark">{{ r.report_type.value }}</span>
         </li>
-        {% else %}
-        <li class="list-group-item text-muted">No pending reports.</li>
         {% endfor %}
       </ul>
     </div>
   </div>
+  {% endif %}
 
+  {# ── Chair/Admin: expiring terms ── #}
   {% if expiring_terms %}
   <div class="col-md-6">
     <div class="card shadow-sm border-warning">
@@ -100,6 +152,29 @@
       </ul>
       <div class="card-footer bg-transparent">
         <a class="btn btn-sm btn-outline-warning" href="{{ url_for('boards.list_boards') }}">View boards</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Admin: recent admin actions ── #}
+  {% if recent_admin_actions %}
+  <div class="col-md-6">
+    <div class="card shadow-sm">
+      <div class="card-header">Recent admin actions</div>
+      <ul class="list-group list-group-flush small">
+        {% for a in recent_admin_actions %}
+        <li class="list-group-item">
+          <div class="d-flex justify-content-between">
+            <span class="badge bg-secondary">{{ a.action }}</span>
+            <span class="text-muted">{{ a.created_at.strftime('%b %d %H:%M') }}</span>
+          </div>
+          <div class="text-muted">{{ a.detail|truncate(80) }}</div>
+        </li>
+        {% endfor %}
+      </ul>
+      <div class="card-footer bg-transparent">
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('users.admin_log') }}">View full log</a>
       </div>
     </div>
   </div>

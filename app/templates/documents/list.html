@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Documents{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3">Documents</h1>
+  <div class="d-flex gap-2">
+    {% if current_user.role.value == 'admin' %}
+    <a class="btn btn-primary" href="{{ url_for('documents.create_document') }}">+ New document</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="mb-3">
+  <a class="btn btn-sm {% if not selected_category %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{{ url_for('documents.list_documents') }}">All</a>
+  {% for c in categories %}
+  <a class="btn btn-sm {% if selected_category == c.value %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+     href="{{ url_for('documents.list_documents', category=c.value) }}">{{ c.value.replace('_', ' ').title() }}</a>
+  {% endfor %}
+</div>
+
+{% if documents %}
+<div class="row g-4">
+  {% for doc in documents %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card shadow-sm h-100">
+      <div class="card-body">
+        <h5 class="card-title">
+          <a href="{{ url_for('documents.view_document', doc_id=doc.id) }}">{{ doc.title }}</a>
+        </h5>
+        <span class="badge bg-secondary">{{ doc.category.value.replace('_', ' ').title() }}</span>
+        <span class="badge bg-light text-dark">v{{ doc.current_version }}</span>
+      </div>
+      <div class="card-footer bg-transparent small text-muted">
+        Updated by {{ doc.updated_by.full_name }}
+        {% if doc.updated_at %}
+          on {{ doc.updated_at.strftime('%b %d, %Y') }}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">No documents found{% if selected_category %} in this category{% endif %}.</div>
+{% endif %}
+{% endblock %}

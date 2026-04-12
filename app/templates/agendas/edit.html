@@ -64,6 +64,24 @@
       </div>
     </div>
     {% endif %}
+    {% if current_user.role.value in ['chair', 'vice_chair', 'secretary', 'admin', 'pastor'] %}
+    {% set templates = get_meeting_templates() if get_meeting_templates is defined else [] %}
+    <div class="card shadow-sm mt-3">
+      <div class="card-header">Apply a template</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('meetings.apply_template', meeting_id=meeting.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <select name="template_id" class="form-select form-select-sm mb-2" required>
+            <option value="">Select a template...</option>
+            {% for t in meeting_templates %}
+            <option value="{{ t.id }}">{{ t.name }} ({{ t.items|length }} items)</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-sm btn-outline-primary">Apply to agenda</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
     <a class="btn btn-outline-secondary mt-3" href="{{ url_for('meetings.meeting_detail', meeting_id=meeting.id) }}">Back to meeting</a>
   </div>
 </div>

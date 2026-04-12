@@ -1,6 +1,7 @@
 """Board service-term tracking routes."""
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import date
 
 from flask import abort, flash, redirect, render_template, request, url_for
@@ -416,4 +417,74 @@ def edit_term(term_id: int):
         board=board,
         term=term,
         form=form,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Term expiration calendar
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/term-calendar")
+@login_required
+def term_calendar():
+    """Visual timeline of all active service terms grouped by expiration month."""
+    today = date.today()
+    active_terms = (
+        ServiceTerm.query
+        .filter_by(status=TermStatus.active)
+        .order_by(ServiceTerm.term_end.asc())
+        .all()
+    )
+
+    # Group terms by expiration month (YYYY-MM string key).
+    by_month: dict[str, list] = defaultdict(list)
+    for t in active_terms:
+        key = t.term_end.strftime("%Y-%m")
+        by_month[key].append(t)
+
+    # Build ordered list of (month_label, terms) tuples.
+    month_groups = []
+    for key in sorted(by_month.keys()):
+        sample = by_month[key][0].term_end
+        label = sample.strftime("%B %Y")
+        is_past = sample < today
+        months_away = (sample.year - today.year) * 12 + (sample.month - today.month)
+        month_groups.append({
+            "key": key,
+            "label": label,
+            "terms": by_month[key],
+            "is_past": is_past,
+            "months_away": months_away,
+        })
+
+    # Cooldown members across all boards.
+    cooldown_members: list[dict] = []
+    completed_terms = (
+        ServiceTerm.query
+        .filter_by(status=TermStatus.completed)
+        .all()
+    )
+    seen: set[tuple[int, int, str]] = set()
+    for t in completed_terms:
+        key = (t.user_id, t.board_id, t.role_on_board.value)
+        if key in seen:
+            continue
+        seen.add(key)
+        cd_end = cooldown_end_date(t.user_id, t.board_id, t.role_on_board.value)
+        if cd_end and today < cd_end:
+            cooldown_members.append({
+                "user": t.user,
+                "role": t.role_on_board,
+                "board": t.board,
+                "cooldown_end": cd_end,
+                "months_left": max(0, (cd_end - today).days // 30),
+            })
+
+    return render_template(
+        "boards/term_calendar.html",
+        month_groups=month_groups,
+        cooldown_members=cooldown_members,
+        today=today,
+        term_rules=TERM_RULES,
     )

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Term Expiration Calendar{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3">Term Expiration Calendar</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('boards.list_boards') }}">&larr; All boards</a>
+</div>
+
+{% if not month_groups %}
+<div class="alert alert-info">No active service terms recorded.</div>
+{% else %}
+
+<div class="row">
+  {% for group in month_groups %}
+  <div class="col-md-6 col-lg-4 mb-4">
+    <div class="card shadow-sm{% if group.is_past %} border-danger{% elif group.months_away <= 6 %} border-warning{% endif %}">
+      <div class="card-header{% if group.is_past %} bg-danger text-white{% elif group.months_away <= 6 %} bg-warning text-dark{% endif %}">
+        {{ group.label }}
+        {% if group.is_past %}
+          <span class="badge bg-light text-danger float-end">Expired</span>
+        {% elif group.months_away <= 3 %}
+          <span class="badge bg-light text-warning float-end">{{ group.months_away }} mo.</span>
+        {% elif group.months_away <= 6 %}
+          <span class="badge bg-light text-dark float-end">{{ group.months_away }} mo.</span>
+        {% else %}
+          <span class="badge bg-light text-dark float-end">{{ group.months_away }} mo.</span>
+        {% endif %}
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for t in group.terms %}
+        <li class="list-group-item">
+          <div class="fw-bold">{{ t.user.full_name }}</div>
+          <div class="small text-muted">
+            {{ t.role_on_board.value.replace('_', ' ').title() }}
+            on {{ t.board.display_name }}
+          </div>
+          <div class="small text-muted">
+            Term {{ t.term_number }} &middot;
+            {{ t.term_start.strftime('%b %Y') }} &ndash; {{ t.term_end.strftime('%b %Y') }}
+            {% set rules = term_rules.get(t.role_on_board.value, {}) %}
+            {% if rules %}
+              &middot; Max {{ rules.get('max_consecutive', '?') }} consecutive
+            {% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if cooldown_members %}
+<h2 class="h4 mt-4 mb-3">Members in cooldown</h2>
+<div class="card shadow-sm border-info">
+  <div class="card-header bg-info text-white">Served max terms &mdash; cooling down</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr><th>Name</th><th>Role</th><th>Board</th><th>Eligible again</th><th>Months left</th></tr>
+      </thead>
+      <tbody>
+        {% for cm in cooldown_members %}
+        <tr>
+          <td>{{ cm.user.full_name }}</td>
+          <td>{{ cm.role.value.replace('_', ' ').title() }}</td>
+          <td>{{ cm.board.display_name }}</td>
+          <td>{{ cm.cooldown_end.strftime('%b %Y') }}</td>
+          <td>{{ cm.months_left }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

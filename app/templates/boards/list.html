@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Boards{% endblock %}
 {% block content %}
-<h1 class="h3 mb-4">Boards &amp; Governing Bodies</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">Boards &amp; Governing Bodies</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('boards.term_calendar') }}">Term expiration calendar</a>
+</div>
 
 <div class="row g-4">
   {% for board in boards %}

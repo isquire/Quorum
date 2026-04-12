@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Restore Database{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3">Restore Database</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('users.list_users') }}">&larr; Back to users</a>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <div class="alert alert-danger">
+          <strong>Warning:</strong> Restoring a database will <strong>replace all current data</strong>
+          with the contents of the uploaded file. A backup of the current database will be saved automatically
+          before the replacement. After restoring, you should restart the application.
+        </div>
+        <form method="post" enctype="multipart/form-data"
+              onsubmit="return confirm('Are you sure you want to replace the entire database? This cannot be undone.');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <div class="mb-3">
+            <label class="form-label" for="db_file">SQLite database file (.db)</label>
+            <input type="file" class="form-control" name="db_file" id="db_file" accept=".db,.sqlite,.sqlite3" required>
+          </div>
+          <button type="submit" class="btn btn-danger">Restore database</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm">
+      <div class="card-header">How it works</div>
+      <div class="card-body small">
+        <ol>
+          <li>The current database is automatically backed up before replacement.</li>
+          <li>The uploaded file is validated to ensure it is a valid SQLite database.</li>
+          <li>The current database is replaced with the uploaded file.</li>
+          <li>You should restart the application after restoring.</li>
+        </ol>
+        <p class="mb-0">
+          Tip: <a href="{{ url_for('users.backup_db') }}">Download a backup</a> before restoring,
+          just in case.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1108,3 +1108,107 @@ class Attachment(TimestampMixin, db.Model):
     report = db.relationship(
         "Report", back_populates="attachments", foreign_keys=[report_id]
     )
+
+
+# ---------------------------------------------------------------------------
+# Meeting Templates
+# ---------------------------------------------------------------------------
+
+
+class MeetingTemplate(TimestampMixin, db.Model):
+    """A reusable agenda template for creating meetings."""
+    __tablename__ = "meeting_templates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False, default="")
+    meeting_type = db.Column(
+        db.Enum(MeetingType, native_enum=False), nullable=True
+    )
+    created_by_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False
+    )
+
+    created_by = db.relationship("User")
+    items = db.relationship(
+        "MeetingTemplateItem",
+        back_populates="template",
+        cascade="all, delete-orphan",
+        order_by="MeetingTemplateItem.order_index",
+    )
+
+
+class MeetingTemplateItem(db.Model):
+    """One agenda item within a meeting template."""
+    __tablename__ = "meeting_template_items"
+
+    id = db.Column(db.Integer, primary_key=True)
+    template_id = db.Column(
+        db.Integer, db.ForeignKey("meeting_templates.id"), nullable=False
+    )
+    order_index = db.Column(db.Integer, nullable=False, default=0)
+    category = db.Column(
+        db.Enum(AgendaCategory, native_enum=False), nullable=False
+    )
+    title = db.Column(db.String(300), nullable=False)
+    description = db.Column(db.Text, nullable=False, default="")
+    is_confidential = db.Column(db.Boolean, nullable=False, default=False)
+
+    template = db.relationship("MeetingTemplate", back_populates="items")
+
+
+# ---------------------------------------------------------------------------
+# Document Repository
+# ---------------------------------------------------------------------------
+
+
+class DocumentCategory(str, enum.Enum):
+    bylaws = "bylaws"
+    constitution = "constitution"
+    policy = "policy"
+    standing_rules = "standing_rules"
+    form = "form"
+    other = "other"
+
+
+class Document(TimestampMixin, db.Model):
+    """A governance document (bylaws, constitution, policy, etc.)."""
+    __tablename__ = "documents"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(300), nullable=False)
+    category = db.Column(
+        db.Enum(DocumentCategory, native_enum=False), nullable=False
+    )
+    content = db.Column(db.Text, nullable=False, default="")
+    current_version = db.Column(db.Integer, nullable=False, default=1)
+    updated_by_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False
+    )
+
+    updated_by = db.relationship("User")
+    versions = db.relationship(
+        "DocumentVersion",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        order_by="DocumentVersion.version.desc()",
+    )
+
+
+class DocumentVersion(TimestampMixin, db.Model):
+    """A historical version of a document."""
+    __tablename__ = "document_versions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(
+        db.Integer, db.ForeignKey("documents.id"), nullable=False
+    )
+    version = db.Column(db.Integer, nullable=False)
+    content = db.Column(db.Text, nullable=False, default="")
+    change_summary = db.Column(db.String(500), nullable=False, default="")
+    edited_by_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False
+    )
+
+    document = db.relationship("Document", back_populates="versions")
+    edited_by = db.relationship("User")

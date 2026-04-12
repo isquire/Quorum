@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}History: {{ doc.title }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3">Version history &mdash; {{ doc.title }}</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('documents.view_document', doc_id=doc.id) }}">&larr; Back to document</a>
+</div>
+
+<div class="card shadow-sm">
+  <table class="table table-hover mb-0">
+    <thead>
+      <tr><th>Version</th><th>Date</th><th>Edited by</th><th>Summary</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for ver in doc.versions %}
+      <tr{% if ver.version == doc.current_version %} class="table-active"{% endif %}>
+        <td>v{{ ver.version }}{% if ver.version == doc.current_version %} <span class="badge bg-primary">current</span>{% endif %}</td>
+        <td>{{ ver.created_at.strftime('%b %d, %Y %H:%M') if ver.created_at else '—' }}</td>
+        <td>{{ ver.edited_by.full_name }}</td>
+        <td class="small">{{ ver.change_summary or '—' }}</td>
+        <td>
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('documents.view_version', doc_id=doc.id, version=ver.version) }}">View</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

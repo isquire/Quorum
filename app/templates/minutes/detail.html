@@ -17,6 +17,7 @@
     </div>
   </div>
   <div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('minutes.print_view', meeting_id=meeting.id) }}" target="_blank">Print / PDF</a>
     <a class="btn btn-outline-secondary" href="{{ url_for('minutes.export_text', meeting_id=meeting.id) }}">Export .txt</a>
     {% if not meeting.minutes_approved_at and current_user.role.value in ['chair', 'vice_chair', 'admin'] %}
     <form method="post" action="{{ url_for('minutes.approve', meeting_id=meeting.id) }}" class="d-inline">

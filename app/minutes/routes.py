@@ -46,6 +46,17 @@ def approve(meeting_id: int):
     return redirect(url_for("minutes.detail", meeting_id=meeting_id))
 
 
+@bp.route("/<int:meeting_id>/print")
+@login_required
+def print_view(meeting_id: int):
+    meeting = Meeting.query.get_or_404(meeting_id)
+    return render_template(
+        "minutes/print.html",
+        meeting=meeting,
+        secretary_roles=SECRETARY_ROLES,
+    )
+
+
 @bp.route("/<int:meeting_id>/export.txt")
 @login_required
 def export_text(meeting_id: int):
