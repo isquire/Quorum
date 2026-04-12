@@ -20,6 +20,7 @@ from .models import (
     MotionResult,
     MotionType,
     User,
+    VoteMethod,
 )
 from .rro import MOTION_TYPE_LABELS, STAGE_LABELS
 
@@ -165,8 +166,14 @@ def log_motion_voted(
         f"{motion.yes_count} yes, {motion.no_count} no, "
         f"{motion.abstain_count} abstain"
     )
+    method_label = (
+        "voice vote"
+        if motion.vote_method == VoteMethod.voice
+        else "roll call"
+    )
     text = (
-        f'Vote on motion: "{motion.text}" — {verdict} ({tally}).'
+        f'Vote on motion: "{motion.text}" — {verdict} '
+        f"({tally}) [{method_label}]."
     )
     return _append(
         meeting,

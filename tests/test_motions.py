@@ -12,6 +12,8 @@ from app.models import (
     MeetingStage,
     MeetingStatus,
     MeetingType,
+    MinutesEntry,
+    MinutesEntryType,
     Motion,
     MotionResult,
     MotionStatus,
@@ -20,6 +22,7 @@ from app.models import (
     User,
     Vote,
     VoteChoice,
+    VoteMethod,
 )
 
 
@@ -91,6 +94,7 @@ def test_vote_lifecycle_simple_majority(client, chair, members, meeting, auth):
         seconder_id=m2.id,
         status=MotionStatus.seconded,
         requires_majority=MajorityRule.simple,
+        vote_method=VoteMethod.roll_call,
     )
     db.session.add(motion)
     db.session.flush()
@@ -210,7 +214,7 @@ def test_deacons_only_vote_blocks_trustee(
             MeetingAttendance(meeting_id=m.id, user_id=u.id, is_present=True)
         )
 
-    # Create a deacons-only motion.
+    # Create a deacons-only motion (roll call so members vote individually).
     motion = Motion(
         meeting_id=m.id,
         motion_type=MotionType.main,
@@ -219,6 +223,7 @@ def test_deacons_only_vote_blocks_trustee(
         seconder_id=pastor.id,
         status=MotionStatus.voting,
         requires_majority=MajorityRule.simple,
+        vote_method=VoteMethod.roll_call,
         deacons_only=True,
     )
     db.session.add(motion)
@@ -294,6 +299,7 @@ def test_deacons_only_recount_excludes_trustee_votes(app, db, make_user, board_o
         maker_id=deacon.id,
         status=MotionStatus.voting,
         requires_majority=MajorityRule.simple,
+        vote_method=VoteMethod.roll_call,
         deacons_only=True,
     )
     db.session.add(motion)
@@ -311,3 +317,192 @@ def test_deacons_only_recount_excludes_trustee_votes(app, db, make_user, board_o
     assert motion.yes_count == 2
     assert motion.no_count == 0
     assert motion.abstain_count == 0
+
+
+# ---------------------------------------------------------------------------
+# Manual tally (voice / show-of-hands) tests
+# ---------------------------------------------------------------------------
+
+
+def test_manual_tally_voice_vote(client, chair, members, meeting, auth):
+    """Chair enters manual tally for a voice vote and closes it."""
+    _start_meeting(meeting, chair)
+    for a in meeting.attendances:
+        a.is_present = True
+    db.session.commit()
+
+    # Create a voice-method motion that has been seconded.
+    m1 = User.query.filter_by(email="member1@example.com").one()
+    m2 = User.query.filter_by(email="member2@example.com").one()
+    motion = Motion(
+        meeting_id=meeting.id,
+        motion_type=MotionType.main,
+        text="Approve voice vote motion",
+        maker_id=m1.id,
+        seconder_id=m2.id,
+        status=MotionStatus.seconded,
+        requires_majority=MajorityRule.simple,
+        vote_method=VoteMethod.voice,
+    )
+    db.session.add(motion)
+    db.session.flush()
+    meeting.current_motion_id = motion.id
+    db.session.commit()
+
+    # Chair opens vote.
+    auth.login("chair@example.com")
+    client.post(
+        f"/meetings/{meeting.id}/live/motions/{motion.id}/open-vote",
+        follow_redirects=True,
+    )
+    db.session.refresh(motion)
+    assert motion.status == MotionStatus.voting
+
+    # Chair enters manual tally.
+    resp = client.post(
+        f"/meetings/{meeting.id}/live/motions/{motion.id}/manual-tally",
+        data={
+            "yes_count": "4",
+            "no_count": "1",
+            "abstain_count": "1",
+            "submit": "Record tally",
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    db.session.refresh(motion)
+    assert motion.yes_count == 4
+    assert motion.no_count == 1
+    assert motion.abstain_count == 1
+
+    # Chair closes vote.
+    client.post(
+        f"/meetings/{meeting.id}/live/motions/{motion.id}/close-vote",
+        follow_redirects=True,
+    )
+    db.session.refresh(motion)
+    assert motion.result == MotionResult.passed
+    assert motion.yes_count == 4  # Not recounted from Vote rows
+
+    # Minutes entry includes voice vote label.
+    entry = MinutesEntry.query.filter_by(
+        meeting_id=meeting.id,
+        entry_type=MinutesEntryType.motion_voted,
+    ).first()
+    assert entry is not None
+    assert "voice vote" in entry.text
+    assert "4 yes, 1 no, 1 abstain" in entry.text
+
+
+def test_cast_vote_rejected_for_voice_method(client, chair, members, meeting, auth):
+    """Per-member voting is rejected for voice-method motions."""
+    _start_meeting(meeting, chair)
+    for a in meeting.attendances:
+        a.is_present = True
+    db.session.commit()
+
+    m1 = User.query.filter_by(email="member1@example.com").one()
+    m2 = User.query.filter_by(email="member2@example.com").one()
+    motion = Motion(
+        meeting_id=meeting.id,
+        motion_type=MotionType.main,
+        text="Voice vote motion",
+        maker_id=m1.id,
+        seconder_id=m2.id,
+        status=MotionStatus.voting,
+        requires_majority=MajorityRule.simple,
+        vote_method=VoteMethod.voice,
+    )
+    db.session.add(motion)
+    db.session.flush()
+    meeting.current_motion_id = motion.id
+    db.session.commit()
+
+    # Member tries to cast a per-member vote → redirected with warning.
+    auth.login("member1@example.com")
+    resp = client.post(
+        f"/meetings/{meeting.id}/live/motions/{motion.id}/vote",
+        data={"choice": "yes", "submit": "Cast vote"},
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert b"voice" in resp.data.lower()
+    # No Vote rows should be created.
+    assert Vote.query.filter_by(motion_id=motion.id).count() == 0
+
+
+def test_roll_call_minutes_label(client, chair, members, meeting, auth):
+    """Roll-call vote minutes entry includes the [roll call] label."""
+    _start_meeting(meeting, chair)
+    for a in meeting.attendances:
+        a.is_present = True
+    db.session.commit()
+
+    m1 = User.query.filter_by(email="member1@example.com").one()
+    m2 = User.query.filter_by(email="member2@example.com").one()
+    motion = Motion(
+        meeting_id=meeting.id,
+        motion_type=MotionType.main,
+        text="Roll call motion",
+        maker_id=m1.id,
+        seconder_id=m2.id,
+        status=MotionStatus.seconded,
+        requires_majority=MajorityRule.simple,
+        vote_method=VoteMethod.roll_call,
+    )
+    db.session.add(motion)
+    db.session.flush()
+    meeting.current_motion_id = motion.id
+    db.session.commit()
+
+    auth.login("chair@example.com")
+    client.post(
+        f"/meetings/{meeting.id}/live/motions/{motion.id}/open-vote",
+        follow_redirects=True,
+    )
+
+    # Cast one vote.
+    auth.logout()
+    auth.login("member1@example.com")
+    client.post(
+        f"/meetings/{meeting.id}/live/motions/{motion.id}/vote",
+        data={"choice": "yes", "submit": "Cast vote"},
+        follow_redirects=True,
+    )
+
+    # Close vote.
+    auth.logout()
+    auth.login("chair@example.com")
+    client.post(
+        f"/meetings/{meeting.id}/live/motions/{motion.id}/close-vote",
+        follow_redirects=True,
+    )
+
+    entry = MinutesEntry.query.filter_by(
+        meeting_id=meeting.id,
+        entry_type=MinutesEntryType.motion_voted,
+    ).first()
+    assert entry is not None
+    assert "roll call" in entry.text
+
+
+def test_recount_noop_for_voice_votes(app, db, make_user):
+    """Motion.recount() is a no-op for voice votes."""
+    u = make_user(email="maker@example.com", full_name="Maker")
+    motion = Motion(
+        meeting_id=1,
+        motion_type=MotionType.main,
+        text="Test",
+        maker_id=u.id,
+        status=MotionStatus.voting,
+        requires_majority=MajorityRule.simple,
+        vote_method=VoteMethod.voice,
+        yes_count=5,
+        no_count=2,
+        abstain_count=1,
+    )
+    # recount should not zero-out the manually entered counts.
+    motion.recount()
+    assert motion.yes_count == 5
+    assert motion.no_count == 2
+    assert motion.abstain_count == 1

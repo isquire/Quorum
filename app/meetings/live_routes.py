@@ -44,7 +44,7 @@ from ..rro import (
     default_majority_rule,
     next_stage,
 )
-from .forms import ChairNoteForm, MotionForm, VoteForm
+from .forms import ChairNoteForm, ManualTallyForm, MotionForm, VoteForm
 
 bp = Blueprint("live", __name__, url_prefix="/meetings/<int:meeting_id>/live")
 
@@ -119,6 +119,7 @@ def live(meeting_id: int):
     active_motion = _active_motion(meeting)
     motion_form = MotionForm()
     vote_form = VoteForm()
+    manual_tally_form = ManualTallyForm()
     note_form = ChairNoteForm()
 
     # Build list of allowed motion types for current state.
@@ -150,6 +151,7 @@ def live(meeting_id: int):
         active_motion=active_motion,
         motion_form=motion_form,
         vote_form=vote_form,
+        manual_tally_form=manual_tally_form,
         note_form=note_form,
         my_vote=my_vote,
         allowed_motion_types=allowed_types,
@@ -433,6 +435,11 @@ def cast_vote(meeting_id: int, motion_id: int):
         flash("Voting is not open on this motion.", "warning")
         return redirect(url_for("live.live", meeting_id=meeting_id))
 
+    # Voice / show-of-hands votes use manual tally, not per-member votes.
+    if motion.vote_method == VoteMethod.voice:
+        flash("This motion uses voice / show-of-hands voting. The chair enters the tally.", "warning")
+        return redirect(url_for("live.live", meeting_id=meeting_id))
+
     # Constitution Art VIII §6 — deacons-only vote enforcement.
     if motion.deacons_only and meeting.board_id:
         membership = BoardMembership.query.filter_by(
@@ -484,7 +491,11 @@ def close_vote(meeting_id: int, motion_id: int):
         flash("Motion is not in voting state.", "warning")
         return redirect(url_for("live.live", meeting_id=meeting_id))
 
-    motion.recount()
+    # Only recount from Vote rows for roll-call votes.
+    # Voice / show-of-hands tallies are already set via enter_manual_tally.
+    if motion.vote_method == VoteMethod.roll_call:
+        motion.recount()
+
     result = motion.compute_result()
     motion.result = result
     motion.status = (
@@ -500,6 +511,33 @@ def close_vote(meeting_id: int, motion_id: int):
     minutes_logger.log_motion_voted(meeting, motion, current_user)
     db.session.commit()
     flash(f"Vote closed: {result.value.upper()}.", "success")
+    return redirect(url_for("live.live", meeting_id=meeting_id))
+
+
+@bp.route("/motions/<int:motion_id>/manual-tally", methods=["POST"])
+@login_required
+def enter_manual_tally(meeting_id: int, motion_id: int):
+    """Chair enters yes/no/abstain counts for voice or show-of-hands votes."""
+    meeting = _get_meeting(meeting_id)
+    _require_chair_or_vice(meeting)
+
+    motion = Motion.query.get_or_404(motion_id)
+    if motion.meeting_id != meeting.id:
+        abort(404)
+    if motion.status != MotionStatus.voting:
+        flash("Motion is not in voting state.", "warning")
+        return redirect(url_for("live.live", meeting_id=meeting_id))
+
+    form = ManualTallyForm()
+    if not form.validate_on_submit():
+        flash("Please enter valid vote counts.", "danger")
+        return redirect(url_for("live.live", meeting_id=meeting_id))
+
+    motion.yes_count = form.yes_count.data
+    motion.no_count = form.no_count.data
+    motion.abstain_count = form.abstain_count.data
+    db.session.commit()
+    flash("Tally recorded.", "success")
     return redirect(url_for("live.live", meeting_id=meeting_id))
 
 

@@ -682,9 +682,14 @@ class Motion(TimestampMixin, db.Model):
     def recount(self) -> None:
         """Recompute vote tallies from individual Vote rows.
 
+        For voice / show-of-hands votes the tallies are entered manually
+        by the chair, so this method is a no-op.
+
         For deacons-only motions (Constitution Art VIII §6), only votes
         from users with pastor/deacon board membership are counted.
         """
+        if self.vote_method == VoteMethod.voice:
+            return
         yes = no = abstain = 0
         for v in self.votes:
             # Filter out ineligible votes on deacons-only motions.

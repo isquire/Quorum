@@ -55,18 +55,50 @@
       {% elif active_motion.status.value == 'voting' %}
         <div class="mb-3">
           <strong>Voting is open</strong>
+          <span class="badge bg-secondary">{{ active_motion.vote_method.value.replace('_', ' ') }}</span>
           <div>Current tally: {{ active_motion.yes_count }} yes / {{ active_motion.no_count }} no / {{ active_motion.abstain_count }} abstain</div>
         </div>
-        {% if current_user.is_voting_member %}
-        <form method="post" action="{{ url_for('live.cast_vote', meeting_id=meeting.id, motion_id=active_motion.id) }}" class="mb-3">
-          {{ vote_form.hidden_tag() }}
-          <div class="btn-group" role="group">
-            <button type="submit" name="choice" value="yes" class="btn btn-success">Yes</button>
-            <button type="submit" name="choice" value="no" class="btn btn-danger">No</button>
-            <button type="submit" name="choice" value="abstain" class="btn btn-secondary">Abstain</button>
-          </div>
-        </form>
+
+        {% if active_motion.vote_method.value == 'roll_call' %}
+          {# Roll call: members vote individually through the app #}
+          {% if current_user.is_voting_member %}
+          <form method="post" action="{{ url_for('live.cast_vote', meeting_id=meeting.id, motion_id=active_motion.id) }}" class="mb-3">
+            {{ vote_form.hidden_tag() }}
+            <div class="btn-group" role="group">
+              <button type="submit" name="choice" value="yes" class="btn btn-success">Yes</button>
+              <button type="submit" name="choice" value="no" class="btn btn-danger">No</button>
+              <button type="submit" name="choice" value="abstain" class="btn btn-secondary">Abstain</button>
+            </div>
+          </form>
+          {% endif %}
+        {% else %}
+          {# Voice / show-of-hands: chair enters the tally manually #}
+          {% if current_user.role.value in chair_roles %}
+          <form method="post" action="{{ url_for('live.enter_manual_tally', meeting_id=meeting.id, motion_id=active_motion.id) }}" class="mb-3">
+            {{ manual_tally_form.hidden_tag() }}
+            <div class="row g-2 align-items-end">
+              <div class="col-auto">
+                <label class="form-label small mb-0">Yes</label>
+                <input type="number" name="yes_count" class="form-control form-control-sm" min="0" value="{{ active_motion.yes_count }}" style="width: 5rem;">
+              </div>
+              <div class="col-auto">
+                <label class="form-label small mb-0">No</label>
+                <input type="number" name="no_count" class="form-control form-control-sm" min="0" value="{{ active_motion.no_count }}" style="width: 5rem;">
+              </div>
+              <div class="col-auto">
+                <label class="form-label small mb-0">Abstain</label>
+                <input type="number" name="abstain_count" class="form-control form-control-sm" min="0" value="{{ active_motion.abstain_count }}" style="width: 5rem;">
+              </div>
+              <div class="col-auto">
+                <button class="btn btn-sm btn-primary">Record tally</button>
+              </div>
+            </div>
+          </form>
+          {% else %}
+            <p class="text-muted small">Voice / show-of-hands vote in progress. The chair will record the tally.</p>
+          {% endif %}
         {% endif %}
+
         {% if current_user.role.value in chair_roles %}
         <form method="post" action="{{ url_for('live.close_vote', meeting_id=meeting.id, motion_id=active_motion.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>

@@ -2,13 +2,14 @@ from flask_wtf import FlaskForm
 from wtforms import (
     BooleanField,
     DateTimeLocalField,
+    IntegerField,
     RadioField,
     SelectField,
     StringField,
     SubmitField,
     TextAreaField,
 )
-from wtforms.validators import DataRequired, Optional
+from wtforms.validators import DataRequired, NumberRange, Optional
 
 from ..models import (
     AgendaCategory,
@@ -150,6 +151,20 @@ class VoteForm(FlaskForm):
         "Vote", choices=VOTE_CHOICES, validators=[DataRequired()]
     )
     submit = SubmitField("Cast vote")
+
+
+class ManualTallyForm(FlaskForm):
+    """Chair enters yes/no/abstain counts for voice or show-of-hands votes."""
+    yes_count = IntegerField(
+        "Yes", validators=[DataRequired(), NumberRange(min=0)], default=0
+    )
+    no_count = IntegerField(
+        "No", validators=[DataRequired(), NumberRange(min=0)], default=0
+    )
+    abstain_count = IntegerField(
+        "Abstain", validators=[DataRequired(), NumberRange(min=0)], default=0
+    )
+    submit = SubmitField("Record tally")
 
 
 class ChairNoteForm(FlaskForm):
