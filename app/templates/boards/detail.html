@@ -4,9 +4,61 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="h3 mb-0">{{ board.display_name }}</h1>
   {% if current_user.role.value == 'admin' %}
-  <a class="btn btn-primary" href="{{ url_for('boards.record_term', slug=board.slug) }}">
-    + Record new term
-  </a>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-primary" href="{{ url_for('boards.add_member', slug=board.slug) }}">
+      + Add member
+    </a>
+    <a class="btn btn-primary" href="{{ url_for('boards.record_term', slug=board.slug) }}">
+      + Record new term
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{# ---- Board members ---- #}
+<div class="card shadow-sm mb-4">
+  <div class="card-header">Board members</div>
+  {% if board.memberships %}
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Role</th>
+          <th>Voting</th>
+          {% if current_user.role.value == 'admin' %}
+          <th></th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in board.memberships|sort(attribute='user.full_name') %}
+        <tr>
+          <td>{{ m.user.full_name }}</td>
+          <td>{{ m.role_on_board.value.replace('_', ' ').title() }}</td>
+          <td>
+            {% if m.is_voting %}
+              <span class="text-success">yes</span>
+            {% else %}
+              <span class="text-muted">no</span>
+            {% endif %}
+          </td>
+          {% if current_user.role.value == 'admin' %}
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('boards.edit_member', slug=board.slug, membership_id=m.id) }}">Edit</a>
+            <form method="post" action="{{ url_for('boards.remove_member', slug=board.slug, membership_id=m.id) }}" class="d-inline" onsubmit="return confirm('Remove {{ m.user.full_name }} from {{ board.display_name }}?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <button class="btn btn-sm btn-outline-danger">Remove</button>
+            </form>
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body text-muted">No members on this board yet.</div>
   {% endif %}
 </div>
 
@@ -52,10 +104,9 @@
           <td>{{ t.term_number }}</td>
           <td>{{ rules.get('max_consecutive', '—') }}</td>
           {% if current_user.role.value == 'admin' %}
-          <td>
-            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('boards.end_term', term_id=t.id) }}">
-              End early
-            </a>
+          <td class="text-end text-nowrap">
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('boards.edit_term', term_id=t.id) }}">Edit</a>
+            <a class="btn btn-sm btn-outline-warning" href="{{ url_for('boards.end_term', term_id=t.id) }}">End early</a>
           </td>
           {% endif %}
         </tr>
@@ -111,6 +162,9 @@
           <th>Term</th>
           <th>Status</th>
           <th>Notes</th>
+          {% if current_user.role.value == 'admin' %}
+          <th></th>
+          {% endif %}
         </tr>
       </thead>
       <tbody>
@@ -129,6 +183,11 @@
             {% endif %}
           </td>
           <td class="small">{{ t.notes or '' }}</td>
+          {% if current_user.role.value == 'admin' %}
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('boards.edit_term', term_id=t.id) }}">Edit</a>
+          </td>
+          {% endif %}
         </tr>
         {% endfor %}
       </tbody>

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+{% block title %}Edit term — {{ term.user.full_name }}{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Edit service term</h1>
+
+<div class="card shadow-sm" style="max-width: 600px;">
+  <div class="card-body">
+    <p>
+      <strong>{{ term.user.full_name }}</strong> &mdash;
+      {{ term.role_on_board.value.replace('_', ' ').title() }} on {{ board.display_name }}
+    </p>
+
+    <form method="post">
+      {{ form.hidden_tag() }}
+      {{ render_field(form.term_start) }}
+      {{ render_field(form.term_end) }}
+      {{ render_field(form.status) }}
+      {{ render_field(form.notes) }}
+      <div class="d-flex gap-2">
+        {{ form.submit(class="btn btn-primary") }}
+        <a class="btn btn-outline-secondary" href="{{ url_for('boards.board_detail', slug=board.slug) }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

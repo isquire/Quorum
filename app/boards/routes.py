@@ -3,9 +3,10 @@ from __future__ import annotations
 
 from datetime import date
 
-from flask import flash, redirect, render_template, request, url_for
-from flask_login import login_required
+from flask import abort, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
 
+from ..admin_log import log_admin_action
 from ..extensions import db
 from ..models import (
     Board,
@@ -25,7 +26,13 @@ from ..models import (
 )
 from ..permissions import admin_required
 from . import bp
-from .forms import EndTermForm, RecordTermForm
+from .forms import (
+    BoardMembershipForm,
+    EditMembershipForm,
+    EditTermForm,
+    EndTermForm,
+    RecordTermForm,
+)
 
 
 @bp.route("/")
@@ -194,6 +201,12 @@ def record_term(slug: str):
                     is_voting=True,
                 ))
 
+        db.session.flush()
+        user = db.session.get(User, form.user_id.data)
+        log_admin_action(
+            current_user.id, "record_service_term", "service_term", term.id,
+            f"Recorded {role_value} term for {user.full_name} on {board.display_name}.",
+        )
         db.session.commit()
         label = "active" if term_status == TermStatus.active else "completed"
         flash(
@@ -243,6 +256,11 @@ def end_term(term_id: int):
                 (term.notes + "\n" if term.notes else "")
                 + form.notes.data.strip()
             )
+        log_admin_action(
+            current_user.id, "end_service_term", "service_term", term.id,
+            f"Ended {term.user.full_name}'s term as "
+            f"{term.role_on_board.value.replace('_', ' ')} on {board.display_name}.",
+        )
         db.session.commit()
         flash(
             f"Ended {term.user.full_name}'s term as "
@@ -256,6 +274,145 @@ def end_term(term_id: int):
 
     return render_template(
         "boards/end_term.html",
+        board=board,
+        term=term,
+        form=form,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Board membership management
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/<slug>/members/add", methods=["GET", "POST"])
+@admin_required
+def add_member(slug: str):
+    board = Board.query.filter_by(slug=slug).first_or_404()
+    form = BoardMembershipForm()
+
+    # Only show active users not already on this board.
+    existing_user_ids = {
+        m.user_id for m in BoardMembership.query.filter_by(board_id=board.id).all()
+    }
+    available_users = (
+        User.query
+        .filter_by(is_active=True)
+        .filter(~User.id.in_(existing_user_ids) if existing_user_ids else User.id.isnot(None))
+        .order_by(User.full_name)
+        .all()
+    )
+    form.user_id.choices = [(u.id, u.full_name) for u in available_users]
+
+    if form.validate_on_submit():
+        membership = BoardMembership(
+            board_id=board.id,
+            user_id=form.user_id.data,
+            role_on_board=BoardRole(form.role_on_board.data),
+            is_voting=form.is_voting.data,
+        )
+        db.session.add(membership)
+        db.session.flush()
+        user = db.session.get(User, form.user_id.data)
+        log_admin_action(
+            current_user.id, "add_board_member", "board_membership", membership.id,
+            f"Added {user.full_name} to {board.display_name} as "
+            f"{form.role_on_board.data.replace('_', ' ')}.",
+        )
+        db.session.commit()
+        flash(f"Added {user.full_name} to {board.display_name}.", "success")
+        return redirect(url_for("boards.board_detail", slug=slug))
+
+    return render_template(
+        "boards/add_member.html",
+        board=board,
+        form=form,
+    )
+
+
+@bp.route("/<slug>/members/<int:membership_id>/edit", methods=["GET", "POST"])
+@admin_required
+def edit_member(slug: str, membership_id: int):
+    board = Board.query.filter_by(slug=slug).first_or_404()
+    membership = BoardMembership.query.get_or_404(membership_id)
+    if membership.board_id != board.id:
+        abort(404)
+
+    form = EditMembershipForm(obj=membership)
+
+    if form.validate_on_submit():
+        membership.role_on_board = BoardRole(form.role_on_board.data)
+        membership.is_voting = form.is_voting.data
+        log_admin_action(
+            current_user.id, "edit_board_member", "board_membership", membership.id,
+            f"Updated {membership.user.full_name}'s membership on {board.display_name}: "
+            f"role={form.role_on_board.data.replace('_', ' ')}, voting={form.is_voting.data}.",
+        )
+        db.session.commit()
+        flash(f"Updated {membership.user.full_name}'s membership.", "success")
+        return redirect(url_for("boards.board_detail", slug=slug))
+
+    if not form.is_submitted():
+        form.role_on_board.data = membership.role_on_board.value
+
+    return render_template(
+        "boards/edit_member.html",
+        board=board,
+        membership=membership,
+        form=form,
+    )
+
+
+@bp.route("/<slug>/members/<int:membership_id>/remove", methods=["POST"])
+@admin_required
+def remove_member(slug: str, membership_id: int):
+    board = Board.query.filter_by(slug=slug).first_or_404()
+    membership = BoardMembership.query.get_or_404(membership_id)
+    if membership.board_id != board.id:
+        abort(404)
+
+    user_name = membership.user.full_name
+    log_admin_action(
+        current_user.id, "remove_board_member", "board_membership", membership.id,
+        f"Removed {user_name} from {board.display_name}.",
+    )
+    db.session.delete(membership)
+    db.session.commit()
+    flash(f"Removed {user_name} from {board.display_name}.", "info")
+    return redirect(url_for("boards.board_detail", slug=slug))
+
+
+# ---------------------------------------------------------------------------
+# Service term editing
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/terms/<int:term_id>/edit", methods=["GET", "POST"])
+@admin_required
+def edit_term(term_id: int):
+    term = ServiceTerm.query.get_or_404(term_id)
+    board = term.board
+    form = EditTermForm(obj=term)
+
+    if form.validate_on_submit():
+        term.term_start = form.term_start.data
+        term.term_end = form.term_end.data
+        term.status = TermStatus(form.status.data)
+        term.notes = (form.notes.data or "").strip()
+        log_admin_action(
+            current_user.id, "edit_service_term", "service_term", term.id,
+            f"Edited {term.user.full_name}'s {term.role_on_board.value.replace('_', ' ')} "
+            f"term on {board.display_name}.",
+        )
+        db.session.commit()
+        flash(f"Updated {term.user.full_name}'s service term.", "success")
+        return redirect(url_for("boards.board_detail", slug=board.slug))
+
+    if not form.is_submitted():
+        form.status.data = term.status.value
+
+    return render_template(
+        "boards/edit_term.html",
         board=board,
         term=term,
         form=form,
