@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Import users from CSV{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3">Import users from CSV</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('users.list_users') }}">&larr; Back to users</a>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {{ form.hidden_tag() }}
+          <div class="mb-3">
+            {{ form.csv_file.label(class="form-label") }}
+            {{ form.csv_file(class="form-control") }}
+            {% for err in form.csv_file.errors %}
+            <div class="invalid-feedback d-block">{{ err }}</div>
+            {% endfor %}
+          </div>
+          {{ form.submit(class="btn btn-primary") }}
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header">CSV format</div>
+      <div class="card-body small">
+        <p>The CSV must include a header row. Required columns: <strong>email</strong>, <strong>full_name</strong>, <strong>role</strong>.</p>
+        <p>Optional columns: <code>is_active</code>, <code>is_voting_member</code>, <code>is_active_member</code>, <code>family_group</code>, <code>committees</code>, <code>password</code>.</p>
+        <ul>
+          <li><strong>Existing users</strong> (matched by email) will be <em>updated</em>. Password is only changed if a new one is provided (8+ chars).</li>
+          <li><strong>New users</strong> will be <em>created</em>. A password column with at least 8 characters is required for new users.</li>
+          <li>Boolean fields accept: <code>yes/no</code>, <code>true/false</code>, <code>1/0</code>. Blank defaults to <em>yes</em>.</li>
+          <li>Valid roles: <code>admin</code>, <code>pastor</code>, <code>deacon</code>, <code>trustee</code>, <code>secretary</code>, <code>treasurer</code>, <code>assistant_treasurer</code>, <code>member</code>.</li>
+        </ul>
+        <p class="mb-0">Tip: <a href="{{ url_for('users.export_csv') }}">Download the current user list</a> as a starting point.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if results %}
+<div class="card shadow-sm">
+  <div class="card-header">Import results</div>
+  <div class="card-body">
+    {% if results.created %}
+    <h6 class="text-success">Created ({{ results.created|length }})</h6>
+    <ul class="small mb-3">
+      {% for email in results.created %}
+      <li>{{ email }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if results.updated %}
+    <h6 class="text-primary">Updated ({{ results.updated|length }})</h6>
+    <ul class="small mb-3">
+      {% for email in results.updated %}
+      <li>{{ email }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if results.skipped %}
+    <h6 class="text-warning">Skipped ({{ results.skipped|length }})</h6>
+    <ul class="small mb-0">
+      {% for msg in results.skipped %}
+      <li>{{ msg }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

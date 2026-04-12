@@ -29,7 +29,8 @@
           <a class="list-group-item list-group-item-action" href="#confidential">20. Confidential minutes</a>
           <a class="list-group-item list-group-item-action" href="#archiving">21. Archiving meetings &amp; reports</a>
           <a class="list-group-item list-group-item-action" href="#admin-log">22. Admin action log</a>
-          <a class="list-group-item list-group-item-action" href="#tips">23. Tips &amp; pitfalls</a>
+          <a class="list-group-item list-group-item-action" href="#csv-users">23. Bulk user management (CSV)</a>
+          <a class="list-group-item list-group-item-action" href="#tips">24. Tips &amp; pitfalls</a>
           <a class="list-group-item list-group-item-action" href="#quick-ref">Quick reference</a>
         </nav>
       </div>
@@ -857,8 +858,43 @@
       </p>
     </section>
 
+    <section id="csv-users" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">23. Bulk user management (CSV)</h2>
+      <p>Admins can export and import users in bulk using CSV files. This is useful for onboarding many members at once, making batch changes to roles or voting status, or keeping an offline backup of the user list.</p>
+
+      <h5>Exporting users</h5>
+      <ol>
+        <li>Go to <strong>Users</strong> and click <strong>Export CSV</strong>.</li>
+        <li>A <code>users.csv</code> file downloads containing every user (active and removed) with columns for email, full name, role, active status, voting status, active-member status, family group, and committees.</li>
+        <li>The password column is always blank in the export &mdash; passwords are never included.</li>
+      </ol>
+
+      <h5>Importing / updating users</h5>
+      <ol>
+        <li>Go to <strong>Users</strong> and click <strong>Import CSV</strong>.</li>
+        <li>Upload a CSV file with at least these required columns: <code>email</code>, <code>full_name</code>, <code>role</code>.</li>
+        <li>Optional columns: <code>is_active</code>, <code>is_voting_member</code>, <code>is_active_member</code>, <code>family_group</code>, <code>committees</code>, <code>password</code>.</li>
+      </ol>
+
+      <h5>How the import works</h5>
+      <ul>
+        <li><strong>Existing users</strong> (matched by email) are <em>updated</em> with the new values from the CSV. If a password column is provided with 8+ characters, their password is also changed.</li>
+        <li><strong>New users</strong> (email not in the system) are <em>created</em>. A <code>password</code> column with at least 8 characters is required for new users.</li>
+        <li>Rows with missing required fields or invalid roles are <em>skipped</em>, and the reason is shown in the results.</li>
+        <li>Boolean fields accept <code>yes/no</code>, <code>true/false</code>, or <code>1/0</code>. A blank value defaults to <em>yes</em>.</li>
+        <li>Valid roles: <code>admin</code>, <code>pastor</code>, <code>deacon</code>, <code>trustee</code>, <code>secretary</code>, <code>treasurer</code>, <code>assistant_treasurer</code>, <code>member</code>.</li>
+      </ul>
+
+      <h5>Tips</h5>
+      <ul>
+        <li>Start by exporting the current user list, make your changes in a spreadsheet, then re-import the modified file.</li>
+        <li>Every CSV import and export is recorded in the <a href="#admin-log">admin action log</a>.</li>
+        <li>To add many new members, create a spreadsheet with the required columns, add a temporary password for each, and import. Inform members of their temporary passwords so they can log in.</li>
+      </ul>
+    </section>
+
     <section id="tips" class="mb-5">
-      <h2 class="h4 border-bottom pb-2">23. Tips &amp; pitfalls</h2>
+      <h2 class="h4 border-bottom pb-2">24. Tips &amp; pitfalls</h2>
       <ul>
         <li><strong>One browser per person.</strong> Every attending board member should have Quorum open on their own device so they can second motions and cast their own votes.</li>
         <li><strong>Don&rsquo;t forget to open the vote.</strong> A common slip-up: chair discusses a motion and then tries to advance without opening the vote. The motion stays on the floor and blocks advancement.</li>

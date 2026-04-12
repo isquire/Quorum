@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileAllowed, FileField, FileRequired
 from wtforms import BooleanField, PasswordField, SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, Optional
 
@@ -60,3 +61,14 @@ class ResetPasswordForm(FlaskForm):
         "New password", validators=[DataRequired(), Length(min=8)]
     )
     submit = SubmitField("Reset password")
+
+
+class CsvUploadForm(FlaskForm):
+    csv_file = FileField(
+        "CSV file",
+        validators=[
+            FileRequired(),
+            FileAllowed(["csv"], "Only .csv files are allowed."),
+        ],
+    )
+    submit = SubmitField("Upload &amp; import")

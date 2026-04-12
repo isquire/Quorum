@@ -10,6 +10,8 @@
     {% else %}
     <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('users.list_users', show='removed') }}">View removed</a>
     {% endif %}
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('users.export_csv') }}">Export CSV</a>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('users.import_csv') }}">Import CSV</a>
     <a class="btn btn-primary" href="{{ url_for('users.create_user') }}">+ New user</a>
   </div>
 </div>
