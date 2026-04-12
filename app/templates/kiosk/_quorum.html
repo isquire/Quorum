@@ -1,0 +1,6 @@
+<span class="d-flex align-items-center gap-2">
+  <span class="badge {{ 'bg-success' if meeting.has_quorum else 'bg-danger' }} fs-6">
+    {{ meeting.present_count }} / {{ meeting.board_voting_member_count if meeting.board and meeting.board.slug != 'assembly' else meeting.voting_member_count }}
+    {% if meeting.has_quorum %}Quorum Met{% else %}No Quorum{% endif %}
+  </span>
+</span>

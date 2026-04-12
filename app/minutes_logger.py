@@ -192,6 +192,15 @@ def log_chair_note(meeting: Meeting, note: str, actor: User) -> MinutesEntry:
     )
 
 
+def log_kiosk_checkin(meeting: Meeting, member: User) -> MinutesEntry:
+    return _append(
+        meeting,
+        MinutesEntryType.attendance,
+        f"{member.full_name} marked present (kiosk check-in).",
+        actor=member,
+    )
+
+
 def log_adjournment(meeting: Meeting, actor: User) -> MinutesEntry:
     time_str = now_eastern().strftime("%I:%M %p ET")
     return _append(

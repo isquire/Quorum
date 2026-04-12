@@ -25,7 +25,8 @@
           <a class="list-group-item list-group-item-action" href="#vote-methods">16. Vote methods</a>
           <a class="list-group-item list-group-item-action" href="#service-terms">17. Service terms &amp; term limits</a>
           <a class="list-group-item list-group-item-action" href="#timezone">18. Timezone</a>
-          <a class="list-group-item list-group-item-action" href="#tips">19. Tips &amp; pitfalls</a>
+          <a class="list-group-item list-group-item-action" href="#kiosk-mode">19. Kiosk check-in mode</a>
+          <a class="list-group-item list-group-item-action" href="#tips">20. Tips &amp; pitfalls</a>
         </nav>
       </div>
     </div>
@@ -662,8 +663,35 @@
       </ul>
     </section>
 
+    <section id="kiosk-mode" class="mb-5">
+      <h2 class="h4 border-bottom pb-2">19. Kiosk check-in mode</h2>
+      <p>For larger meetings (especially congregational assemblies), Quorum offers a <strong>kiosk mode</strong> &mdash; a tablet-friendly, full-screen check-in page where attendees walk up and mark themselves present while an official observes.</p>
+
+      <h5>Opening the kiosk</h5>
+      <ol>
+        <li>From the meeting detail page (or the live chair view), click <strong>Open kiosk</strong>. You must be a secretary, chair, or pastor to see this button.</li>
+        <li>A new browser tab opens with the kiosk check-in URL. This URL works <em>without</em> requiring a login &mdash; it uses a secure, time-limited token.</li>
+        <li>Open this URL on a tablet or a second screen positioned where attendees can reach it. The link is valid for 12 hours.</li>
+      </ol>
+
+      <h5>Using the kiosk (for attendees)</h5>
+      <ol>
+        <li>Type your name in the search box, or tap a letter button to filter the list.</li>
+        <li>Find your name card and tap it. A green confirmation appears briefly.</li>
+        <li>Step aside for the next person &mdash; the kiosk resets automatically.</li>
+      </ol>
+
+      <h5>How it works</h5>
+      <ul>
+        <li>Each check-in is logged to the meeting minutes with a &ldquo;(kiosk check-in)&rdquo; notation.</li>
+        <li>The quorum count updates in real time on both the kiosk header and the chair&rsquo;s live view.</li>
+        <li>The kiosk can only mark people <em>present</em> &mdash; it cannot mark anyone absent. Only the secretary or chair can reverse attendance from the live view.</li>
+        <li>The kiosk link is cryptographically signed and tied to one specific meeting. It cannot be used to access any other part of the app.</li>
+      </ul>
+    </section>
+
     <section id="tips" class="mb-5">
-      <h2 class="h4 border-bottom pb-2">19. Tips &amp; pitfalls</h2>
+      <h2 class="h4 border-bottom pb-2">20. Tips &amp; pitfalls</h2>
       <ul>
         <li><strong>One browser per person.</strong> Every attending board member should have Quorum open on their own device so they can second motions and cast their own votes.</li>
         <li><strong>Don&rsquo;t forget to open the vote.</strong> A common slip-up: chair discusses a motion and then tries to advance without opening the vote. The motion stays on the floor and blocks advancement.</li>

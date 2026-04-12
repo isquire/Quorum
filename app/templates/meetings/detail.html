@@ -23,6 +23,12 @@
     {% if meeting.status.value == 'in_progress' %}
       <a class="btn btn-success" href="{{ url_for('live.live', meeting_id=meeting.id) }}">Join live</a>
     {% endif %}
+    {% if current_user.role.value in secretary_roles and meeting.status.value in ['scheduled', 'in_progress'] %}
+      <form method="post" action="{{ url_for('meetings.kiosk_link', meeting_id=meeting.id) }}" class="d-inline" target="_blank">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button class="btn btn-outline-primary">Open kiosk</button>
+      </form>
+    {% endif %}
     {% if current_user.role.value in ['chair', 'vice_chair', 'admin', 'pastor'] and meeting.status.value == 'scheduled' %}
       <a class="btn btn-outline-secondary" href="{{ url_for('meetings.edit_meeting', meeting_id=meeting.id) }}">Edit</a>
     {% endif %}

@@ -14,8 +14,9 @@ from ..models import (
     RsvpStatus,
     User,
 )
-from ..permissions import role_required
+from ..permissions import SECRETARY_ROLES, role_required
 from ..utils import now_eastern
+from ..kiosk import generate_kiosk_token
 from . import bp
 from .forms import MeetingForm, RsvpForm
 
@@ -213,3 +214,14 @@ def rsvp(meeting_id: int):
     db.session.commit()
     flash("RSVP recorded.", "success")
     return redirect(url_for("meetings.meeting_detail", meeting_id=meeting_id))
+
+
+@bp.route("/<int:meeting_id>/kiosk-link", methods=["POST"])
+@login_required
+def kiosk_link(meeting_id: int):
+    """Generate a kiosk check-in link for a meeting."""
+    if current_user.role.value not in SECRETARY_ROLES:
+        abort(403)
+    meeting = Meeting.query.get_or_404(meeting_id)
+    token = generate_kiosk_token(meeting.id)
+    return redirect(url_for("kiosk.checkin_page", token=token))

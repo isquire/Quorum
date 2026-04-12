@@ -1,0 +1,74 @@
+{% extends "kiosk/base_kiosk.html" %}
+{% block title %}Check-In: {{ meeting.title }}{% endblock %}
+
+{% block body %}
+<div class="kiosk-header d-flex justify-content-between align-items-center">
+  <div>
+    <strong class="fs-5">{{ meeting.title }}</strong>
+    <span class="text-white-50 ms-2 small">{{ church_display_name }}</span>
+  </div>
+  <div id="kiosk-quorum"
+       hx-get="{{ url_for('kiosk.fragment_quorum', token=token) }}"
+       hx-trigger="every 5s"
+       hx-swap="innerHTML">
+    {% include "kiosk/_quorum.html" %}
+  </div>
+</div>
+
+<div class="container-fluid py-3">
+  {# Search bar #}
+  <div class="row mb-3">
+    <div class="col">
+      <input type="search"
+             id="kiosk-search"
+             class="form-control kiosk-search"
+             placeholder="Type a name to search..."
+             autocomplete="off"
+             hx-get="{{ url_for('kiosk.fragment_attendees', token=token) }}"
+             hx-trigger="keyup changed delay:200ms"
+             hx-target="#attendee-list"
+             hx-swap="innerHTML"
+             name="q">
+    </div>
+  </div>
+
+  {# Alphabet quick-filter bar #}
+  <div class="letter-bar d-flex flex-wrap gap-1 mb-3" id="letter-bar">
+    <button class="btn btn-sm btn-outline-secondary active" data-letter=""
+            hx-get="{{ url_for('kiosk.fragment_attendees', token=token) }}"
+            hx-target="#attendee-list"
+            hx-swap="innerHTML">All</button>
+    {% for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+    <button class="btn btn-sm btn-outline-secondary" data-letter="{{ ch }}"
+            hx-get="{{ url_for('kiosk.fragment_attendees', token=token) }}?letter={{ ch }}"
+            hx-target="#attendee-list"
+            hx-swap="innerHTML">{{ ch }}</button>
+    {% endfor %}
+  </div>
+
+  {# Attendee grid #}
+  <div id="attendee-list">
+    {% include "kiosk/_attendees.html" %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Clear search input when a letter button is clicked.
+  document.getElementById('letter-bar').addEventListener('click', function(e) {
+    if (e.target.tagName === 'BUTTON') {
+      document.getElementById('kiosk-search').value = '';
+      // Update active state.
+      this.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+    }
+  });
+
+  // When search input is used, clear the active letter button.
+  document.getElementById('kiosk-search').addEventListener('input', function() {
+    document.querySelectorAll('#letter-bar .btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('#letter-bar .btn[data-letter=""]').classList.add('active');
+  });
+</script>
+{% endblock %}

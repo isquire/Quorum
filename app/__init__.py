@@ -50,6 +50,7 @@ def create_app(config_name: str | None = None) -> Flask:
     from .reports import bp as reports_bp
     from .attachments import bp as attachments_bp
     from .boards import bp as boards_bp
+    from .kiosk import bp as kiosk_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -61,6 +62,7 @@ def create_app(config_name: str | None = None) -> Flask:
     app.register_blueprint(reports_bp)
     app.register_blueprint(attachments_bp)
     app.register_blueprint(boards_bp)
+    app.register_blueprint(kiosk_bp)
 
     # Register CLI commands.
     from . import cli
