@@ -7,16 +7,16 @@
   {% if a.user %}
   <div class="col-sm-6 col-md-4 col-lg-3">
     {% if a.is_present %}
-    <div class="attendee-card checked-in border d-flex align-items-center justify-content-between">
+    <div class="attendee-card checked-in d-flex align-items-center justify-content-between">
       <span>{{ a.user.full_name }}</span>
-      <span class="text-success fw-bold">&#10003;</span>
+      <span class="fw-bold">&#10003;</span>
     </div>
     {% else %}
     <form hx-post="{{ url_for('kiosk.checkin', token=token, user_id=a.user.id) }}"
           hx-target="#attendee-list"
           hx-swap="innerHTML">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <button type="submit" class="attendee-card border w-100 text-start bg-white">
+      <button type="submit" class="attendee-card">
         {{ a.user.full_name }}
       </button>
     </form>
