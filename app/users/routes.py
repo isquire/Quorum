@@ -12,8 +12,24 @@ from .forms import ResetPasswordForm, UserCreateForm, UserEditForm
 @bp.route("/")
 @admin_required
 def list_users():
-    users = User.query.order_by(User.full_name).all()
-    return render_template("users/list.html", users=users)
+    show = request.args.get("show", "")
+    if show == "removed":
+        users = (
+            User.query.filter_by(is_active=False)
+            .order_by(User.full_name)
+            .all()
+        )
+    else:
+        users = (
+            User.query.filter_by(is_active=True)
+            .order_by(User.full_name)
+            .all()
+        )
+    return render_template(
+        "users/list.html",
+        users=users,
+        show_removed=(show == "removed"),
+    )
 
 
 @bp.route("/new", methods=["GET", "POST"])
@@ -85,11 +101,11 @@ def deactivate_user(user_id: int):
     user = User.query.get_or_404(user_id)
     user.is_active = False
     log_admin_action(
-        current_user.id, "deactivate_user", "user", user.id,
-        f"Deactivated user {user.email}.",
+        current_user.id, "remove_user", "user", user.id,
+        f"Removed user {user.email} ({user.full_name}).",
     )
     db.session.commit()
-    flash(f"Deactivated {user.email}.", "info")
+    flash(f"Removed {user.full_name}. They can no longer log in.", "info")
     return redirect(url_for("users.list_users"))
 
 
@@ -99,11 +115,11 @@ def activate_user(user_id: int):
     user = User.query.get_or_404(user_id)
     user.is_active = True
     log_admin_action(
-        current_user.id, "activate_user", "user", user.id,
-        f"Activated user {user.email}.",
+        current_user.id, "restore_user", "user", user.id,
+        f"Restored user {user.email} ({user.full_name}).",
     )
     db.session.commit()
-    flash(f"Activated {user.email}.", "success")
+    flash(f"Restored {user.full_name}.", "success")
     return redirect(url_for("users.list_users"))
 
 

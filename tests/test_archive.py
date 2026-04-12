@@ -274,9 +274,33 @@ def test_create_user_logs_action(client, admin):
     assert "newuser@example.com" in action.detail
 
 
-def test_deactivate_user_logs_action(client, admin, member):
+def test_remove_user_logs_action(client, admin, member):
     login(client, "admin@example.com")
     client.post(f"/users/{member.id}/deactivate")
-    action = AdminAction.query.filter_by(action="deactivate_user").first()
+    action = AdminAction.query.filter_by(action="remove_user").first()
     assert action is not None
     assert action.target_id == member.id
+
+
+def test_restore_user_logs_action(client, admin, member):
+    login(client, "admin@example.com")
+    client.post(f"/users/{member.id}/deactivate")
+    client.post(f"/users/{member.id}/activate")
+    action = AdminAction.query.filter_by(action="restore_user").first()
+    assert action is not None
+    assert action.target_id == member.id
+
+
+def test_removed_user_hidden_from_active_list(client, admin, member):
+    login(client, "admin@example.com")
+    client.post(f"/users/{member.id}/deactivate")
+    resp = client.get("/users/")
+    # Email only appears in the table rows, not in flash messages.
+    assert b"member@example.com" not in resp.data
+
+
+def test_removed_user_shown_in_removed_view(client, admin, member):
+    login(client, "admin@example.com")
+    client.post(f"/users/{member.id}/deactivate")
+    resp = client.get("/users/?show=removed")
+    assert b"member@example.com" in resp.data
