@@ -1,0 +1,72 @@
+from datetime import datetime
+
+from flask import Response, flash, redirect, render_template, url_for
+from flask_login import current_user, login_required
+
+from ..extensions import db
+from ..models import Meeting, MeetingStatus, Role
+from ..permissions import role_required
+from . import bp
+
+
+@bp.route("/")
+@login_required
+def list_minutes():
+    meetings = (
+        Meeting.query.filter(
+            Meeting.status.in_(
+                [MeetingStatus.adjourned, MeetingStatus.in_progress]
+            )
+        )
+        .order_by(Meeting.scheduled_start.desc())
+        .all()
+    )
+    return render_template("minutes/list.html", meetings=meetings)
+
+
+@bp.route("/<int:meeting_id>")
+@login_required
+def detail(meeting_id: int):
+    meeting = Meeting.query.get_or_404(meeting_id)
+    return render_template("minutes/detail.html", meeting=meeting)
+
+
+@bp.route("/<int:meeting_id>/approve", methods=["POST"])
+@role_required(Role.chair, Role.vice_chair)
+def approve(meeting_id: int):
+    meeting = Meeting.query.get_or_404(meeting_id)
+    meeting.minutes_approved_at = datetime.utcnow()
+    meeting.minutes_approved_by_id = current_user.id
+    db.session.commit()
+    flash("Minutes approved.", "success")
+    return redirect(url_for("minutes.detail", meeting_id=meeting_id))
+
+
+@bp.route("/<int:meeting_id>/export.txt")
+@login_required
+def export_text(meeting_id: int):
+    meeting = Meeting.query.get_or_404(meeting_id)
+    lines = [
+        f"MINUTES — {meeting.title}",
+        f"Date: {meeting.scheduled_start.strftime('%Y-%m-%d %H:%M UTC')}",
+        f"Type: {meeting.meeting_type.value}",
+        f"Location: {meeting.location or 'N/A'}",
+        "",
+        "Attendance:",
+    ]
+    for a in meeting.attendances:
+        status = "present" if a.is_present else "absent"
+        lines.append(f"  - {a.user.full_name} ({status})")
+    lines.append("")
+    lines.append("Proceedings:")
+    for entry in meeting.minutes_entries:
+        ts = entry.timestamp.strftime("%H:%M")
+        lines.append(f"  [{ts}] {entry.text}")
+    body = "\n".join(lines) + "\n"
+    return Response(
+        body,
+        mimetype="text/plain",
+        headers={
+            "Content-Disposition": f'attachment; filename="minutes-{meeting.id}.txt"'
+        },
+    )

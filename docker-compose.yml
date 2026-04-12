@@ -1,0 +1,23 @@
+services:
+  web:
+    build: .
+    image: quorum:latest
+    container_name: quorum-web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      FLASK_APP: wsgi.py
+      FLASK_CONFIG: prod
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set in .env}
+      DATABASE_URL: sqlite:////app/instance/quorum.db
+      UPLOAD_FOLDER: /app/uploads
+      MAX_CONTENT_LENGTH: 26214400
+      TIMEZONE: ${TIMEZONE:-America/Chicago}
+    volumes:
+      - quorum_db:/app/instance
+      - quorum_uploads:/app/uploads
+
+volumes:
+  quorum_db:
+  quorum_uploads:

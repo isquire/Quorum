@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+{% block title %}Live: {{ meeting.title }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-1">{{ meeting.title }}</h1>
+    <div class="text-muted small">
+      {{ stage_labels[meeting.current_stage] }}
+    </div>
+  </div>
+  <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('meetings.meeting_detail', meeting_id=meeting.id) }}">Back</a>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    {% include "meetings/_partials/quorum_badge.html" %}
+  </div>
+
+  <div class="col-lg-5">
+    {% include "meetings/_partials/motion_card.html" %}
+
+    {% if meeting.status.value == 'in_progress' and current_user.is_voting_member and allowed_motion_types %}
+    <div class="card shadow-sm mt-3">
+      <div class="card-header">Make a motion</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('live.make_motion', meeting_id=meeting.id) }}">
+          {{ motion_form.hidden_tag() }}
+          {{ render_field(motion_form.text) }}
+          {{ render_field(motion_form.motion_type) }}
+          {{ render_field(motion_form.requires_majority) }}
+          {{ render_field(motion_form.vote_method) }}
+          {{ motion_form.submit(class="btn btn-primary") }}
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-3">
+    {% include "meetings/_partials/minutes_stream.html" %}
+  </div>
+</div>
+{% endblock %}

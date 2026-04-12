@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+{% block title %}New report{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <h1 class="h4 mb-3">Submit a report</h1>
+    <form method="post" class="card card-body shadow-sm">
+      {{ form.hidden_tag() }}
+      {{ render_field(form.title) }}
+      {{ render_field(form.report_type) }}
+      {{ render_field(form.committee) }}
+      {{ render_field(form.period_start) }}
+      {{ render_field(form.period_end) }}
+      {{ render_field(form.meeting_id) }}
+      {{ render_field(form.content) }}
+      {{ form.submit(class="btn btn-primary") }}
+      <a class="btn btn-link" href="{{ url_for('reports.list_reports') }}">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

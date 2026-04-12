@@ -1,0 +1,25 @@
+/* Quorum — small overrides on top of Bootstrap 5. */
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+.card-header {
+    font-weight: 600;
+}
+
+.list-group-item .badge {
+    font-weight: 500;
+}
+
+blockquote.blockquote {
+    color: #333;
+    font-style: italic;
+    border-left-width: 3px !important;
+}

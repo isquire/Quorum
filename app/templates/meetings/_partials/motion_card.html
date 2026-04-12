@@ -1,0 +1,84 @@
+<div class="card shadow-sm" hx-get="{{ url_for('live.fragment', meeting_id=meeting.id, name='motion') }}" hx-trigger="every 3s" hx-swap="outerHTML">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Motion on the floor</span>
+    {% if active_motion %}
+      <span class="badge bg-info text-dark">{{ active_motion.status.value }}</span>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    {% if active_motion %}
+      <p class="mb-2">
+        <strong>{{ motion_type_labels.get(active_motion.motion_type, active_motion.motion_type.value) }}</strong>
+        {% if active_motion.requires_majority.value == 'two_thirds' %}
+          <span class="badge bg-warning text-dark">2/3 required</span>
+        {% endif %}
+      </p>
+      <blockquote class="blockquote border-start ps-3 mb-3" style="font-size: 1rem;">
+        "{{ active_motion.text }}"
+      </blockquote>
+      <div class="text-muted small mb-3">
+        Made by {{ active_motion.maker.full_name }}
+        {% if active_motion.seconder %}
+          &middot; seconded by {{ active_motion.seconder.full_name }}
+        {% endif %}
+      </div>
+
+      {% if active_motion.status.value == 'proposed' %}
+        {% if current_user.is_voting_member and current_user.id != active_motion.maker_id %}
+        <form method="post" action="{{ url_for('live.second_motion', meeting_id=meeting.id, motion_id=active_motion.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-primary">I second the motion</button>
+        </form>
+        {% else %}
+          <p class="text-muted">Awaiting a second.</p>
+        {% endif %}
+        {% if current_user.id == active_motion.maker_id %}
+        <form method="post" action="{{ url_for('live.withdraw_motion', meeting_id=meeting.id, motion_id=active_motion.id) }}" class="mt-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-sm btn-outline-secondary">Withdraw</button>
+        </form>
+        {% endif %}
+      {% elif active_motion.status.value in ['seconded', 'debating'] %}
+        {% if current_user.role.value in ['chair', 'vice_chair', 'admin'] %}
+        <form method="post" action="{{ url_for('live.open_vote', meeting_id=meeting.id, motion_id=active_motion.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-success">Open vote</button>
+        </form>
+        {% else %}
+          <p class="text-muted">Motion seconded — awaiting chair to open vote.</p>
+        {% endif %}
+      {% elif active_motion.status.value == 'voting' %}
+        <div class="mb-3">
+          <strong>Voting is open</strong>
+          <div>Current tally: {{ active_motion.yes_count }} yes / {{ active_motion.no_count }} no / {{ active_motion.abstain_count }} abstain</div>
+        </div>
+        {% if current_user.is_voting_member %}
+        <form method="post" action="{{ url_for('live.cast_vote', meeting_id=meeting.id, motion_id=active_motion.id) }}" class="mb-3">
+          {{ vote_form.hidden_tag() }}
+          <div class="btn-group" role="group">
+            <button type="submit" name="choice" value="yes" class="btn btn-success">Yes</button>
+            <button type="submit" name="choice" value="no" class="btn btn-danger">No</button>
+            <button type="submit" name="choice" value="abstain" class="btn btn-secondary">Abstain</button>
+          </div>
+        </form>
+        {% endif %}
+        {% if current_user.role.value in ['chair', 'vice_chair', 'admin'] %}
+        <form method="post" action="{{ url_for('live.close_vote', meeting_id=meeting.id, motion_id=active_motion.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <button class="btn btn-warning">Close vote &amp; announce result</button>
+        </form>
+        {% endif %}
+      {% elif active_motion.status.value in ['passed', 'failed'] %}
+        <p class="mb-0">
+          Result:
+          <strong class="text-{{ 'success' if active_motion.result.value == 'passed' else 'danger' }}">
+            {{ active_motion.result.value|upper }}
+          </strong>
+          ({{ active_motion.yes_count }}-{{ active_motion.no_count }}-{{ active_motion.abstain_count }})
+        </p>
+      {% endif %}
+    {% else %}
+      <p class="text-muted mb-0">No motion on the floor.</p>
+    {% endif %}
+  </div>
+</div>

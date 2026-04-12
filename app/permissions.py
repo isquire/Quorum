@@ -1,0 +1,56 @@
+"""Role-based access control decorators."""
+from __future__ import annotations
+
+from functools import wraps
+
+from flask import abort
+from flask_login import current_user
+
+from .models import Role
+
+
+def role_required(*roles: Role | str):
+    """Abort 403 unless the current user has one of the given roles.
+
+    Admin always passes.
+    """
+    wanted = {r.value if isinstance(r, Role) else r for r in roles}
+
+    def decorator(view):
+        @wraps(view)
+        def wrapper(*args, **kwargs):
+            if not current_user.is_authenticated:
+                abort(401)
+            if current_user.role == Role.admin:
+                return view(*args, **kwargs)
+            if current_user.role.value not in wanted:
+                abort(403)
+            return view(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def admin_required(view):
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        if not current_user.is_authenticated:
+            abort(401)
+        if current_user.role != Role.admin:
+            abort(403)
+        return view(*args, **kwargs)
+
+    return wrapper
+
+
+def voting_member_required(view):
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        if not current_user.is_authenticated:
+            abort(401)
+        if not current_user.is_voting_member:
+            abort(403)
+        return view(*args, **kwargs)
+
+    return wrapper

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge %}
+{% block title %}{{ meeting.title }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="h3 mb-1">{{ meeting.title }}</h1>
+    <div class="text-muted">
+      {{ meeting.meeting_type.value|title }} &middot;
+      {{ meeting.scheduled_start.strftime('%a %b %d, %Y %H:%M UTC') }} &middot;
+      {{ meeting.location or 'No location set' }}
+    </div>
+    <div class="mt-2">{{ status_badge(meeting.status) }}</div>
+  </div>
+  <div>
+    {% if current_user.role.value in ['chair', 'vice_chair', 'admin'] and meeting.status.value == 'scheduled' %}
+      <form method="post" action="{{ url_for('live.call_to_order', meeting_id=meeting.id) }}" class="d-inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <button class="btn btn-success">Start meeting</button>
+      </form>
+    {% endif %}
+    {% if meeting.status.value == 'in_progress' %}
+      <a class="btn btn-success" href="{{ url_for('live.live', meeting_id=meeting.id) }}">Join live</a>
+    {% endif %}
+    {% if current_user.role.value in ['chair', 'vice_chair', 'admin'] and meeting.status.value == 'scheduled' %}
+      <a class="btn btn-outline-secondary" href="{{ url_for('meetings.edit_meeting', meeting_id=meeting.id) }}">Edit</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Agenda</span>
+        {% if current_user.role.value in ['chair', 'vice_chair', 'secretary', 'admin'] %}
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('agendas.view_agenda', meeting_id=meeting.id) }}">Edit agenda</a>
+        {% endif %}
+      </div>
+      <ol class="list-group list-group-flush list-group-numbered">
+        {% for item in meeting.agenda_items %}
+        <li class="list-group-item">
+          <strong>{{ item.title }}</strong>
+          <span class="badge bg-light text-dark">{{ item.category.value.replace('_', ' ') }}</span>
+          {% if item.description %}<div class="text-muted small">{{ item.description }}</div>{% endif %}
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">No agenda items yet.</li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header">Attachments</div>
+      <ul class="list-group list-group-flush">
+        {% for a in meeting.attachments %}
+        <li class="list-group-item d-flex justify-content-between">
+          <a href="{{ url_for('attachments.download', attachment_id=a.id) }}">{{ a.original_filename }}</a>
+          <span class="text-muted small">{{ (a.size_bytes / 1024)|round(1) }} KB</span>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">No attachments.</li>
+        {% endfor %}
+      </ul>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('attachments.upload') }}" enctype="multipart/form-data" class="row g-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="context_type" value="meeting"/>
+          <input type="hidden" name="context_id" value="{{ meeting.id }}"/>
+          <div class="col">
+            <input class="form-control" type="file" name="file" required>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-primary">Upload</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header">Your RSVP</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('meetings.rsvp', meeting_id=meeting.id) }}">
+          {{ rsvp_form.hidden_tag() }}
+          {% for subfield in rsvp_form.rsvp %}
+          <div class="form-check">
+            {{ subfield(class="form-check-input") }}
+            {{ subfield.label(class="form-check-label") }}
+          </div>
+          {% endfor %}
+          <button class="btn btn-primary btn-sm mt-2">Save RSVP</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header">Attendance ({{ meeting.present_count }}/{{ meeting.voting_member_count }})</div>
+      <ul class="list-group list-group-flush">
+        {% for a in meeting.attendances %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>{{ a.user.full_name }}
+            {% if a.user.is_voting_member %}
+              <span class="badge bg-light text-dark">voting</span>
+            {% endif %}
+          </span>
+          <span>
+            {% if a.is_present %}<span class="badge bg-success">present</span>
+            {% else %}<span class="badge bg-light text-dark">—</span>{% endif %}
+            <small class="text-muted ms-1">{{ a.rsvp_status.value }}</small>
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

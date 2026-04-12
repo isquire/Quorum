@@ -1,0 +1,13 @@
+<div class="card shadow-sm" hx-get="{{ url_for('live.fragment', meeting_id=meeting.id, name='minutes') }}" hx-trigger="every 3s" hx-swap="outerHTML">
+  <div class="card-header">Minutes (live)</div>
+  <ul class="list-group list-group-flush small" style="max-height: 70vh; overflow-y: auto;">
+    {% for entry in meeting.minutes_entries|reverse %}
+    <li class="list-group-item">
+      <div class="text-muted small">{{ entry.timestamp.strftime('%H:%M:%S') }}</div>
+      <div>{{ entry.text }}</div>
+    </li>
+    {% else %}
+    <li class="list-group-item text-muted">No entries yet.</li>
+    {% endfor %}
+  </ul>
+</div>

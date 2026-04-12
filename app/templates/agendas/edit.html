@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+{% block title %}Agenda: {{ meeting.title }}{% endblock %}
+{% block content %}
+<h1 class="h3">Agenda &mdash; {{ meeting.title }}</h1>
+<p class="text-muted">{{ meeting.scheduled_start.strftime('%Y-%m-%d %H:%M UTC') }}</p>
+
+<div class="row g-4">
+  <div class="col-md-7">
+    <div class="card shadow-sm">
+      <div class="card-header">Agenda items</div>
+      <ol class="list-group list-group-flush list-group-numbered">
+        {% for item in meeting.agenda_items %}
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+          <div>
+            <strong>{{ item.title }}</strong>
+            <span class="badge bg-light text-dark">{{ item.category.value.replace('_',' ') }}</span>
+            {% if item.presenter %}
+              <span class="text-muted small">· presenter: {{ item.presenter.full_name }}</span>
+            {% endif %}
+            {% if item.description %}<div class="text-muted small">{{ item.description }}</div>{% endif %}
+          </div>
+          {% if current_user.role.value in ['chair', 'vice_chair', 'secretary', 'admin'] %}
+          <div class="btn-group btn-group-sm">
+            <form method="post" action="{{ url_for('agendas.move_item', meeting_id=meeting.id, item_id=item.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <input type="hidden" name="direction" value="up"/>
+              <button class="btn btn-outline-secondary">&uarr;</button>
+            </form>
+            <form method="post" action="{{ url_for('agendas.move_item', meeting_id=meeting.id, item_id=item.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <input type="hidden" name="direction" value="down"/>
+              <button class="btn btn-outline-secondary">&darr;</button>
+            </form>
+            <form method="post" action="{{ url_for('agendas.delete_item', meeting_id=meeting.id, item_id=item.id) }}" onsubmit="return confirm('Remove this item?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <button class="btn btn-outline-danger">&times;</button>
+            </form>
+          </div>
+          {% endif %}
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">No agenda items yet.</li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+
+  <div class="col-md-5">
+    {% if current_user.role.value in ['chair', 'vice_chair', 'secretary', 'admin'] %}
+    <div class="card shadow-sm">
+      <div class="card-header">Add an item</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('agendas.create_item', meeting_id=meeting.id) }}">
+          {{ form.hidden_tag() }}
+          {{ render_field(form.title) }}
+          {{ render_field(form.category) }}
+          {{ render_field(form.description) }}
+          {{ render_field(form.presenter_id) }}
+          {{ form.submit(class="btn btn-primary") }}
+        </form>
+      </div>
+    </div>
+    {% endif %}
+    <a class="btn btn-outline-secondary mt-3" href="{{ url_for('meetings.meeting_detail', meeting_id=meeting.id) }}">Back to meeting</a>
+  </div>
+</div>
+{% endblock %}

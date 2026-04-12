@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3">Reports</h1>
+  <a class="btn btn-primary" href="{{ url_for('reports.create_report') }}">+ Submit report</a>
+</div>
+<div class="card shadow-sm">
+<table class="table table-hover mb-0">
+  <thead><tr><th>Title</th><th>Type</th><th>Submitted by</th><th>Date</th><th>Approved</th></tr></thead>
+  <tbody>
+    {% for r in reports %}
+    <tr>
+      <td><a href="{{ url_for('reports.detail', report_id=r.id) }}">{{ r.title }}</a></td>
+      <td>{{ r.report_type.value }}</td>
+      <td>{{ r.submitted_by.full_name }}</td>
+      <td>{{ r.submitted_at.strftime('%Y-%m-%d') }}</td>
+      <td>{% if r.approved_at %}<span class="text-success">yes</span>{% else %}<span class="text-muted">no</span>{% endif %}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="text-muted">No reports yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

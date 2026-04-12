@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+{% block title %}Live: {{ meeting.title }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h4 mb-1">{{ meeting.title }}</h1>
+    <div class="text-muted small">
+      {{ stage_labels[meeting.current_stage] }}
+      {% if meeting.called_to_order_at %}
+        &middot; called to order at {{ meeting.called_to_order_at.strftime('%H:%M UTC') }}
+      {% endif %}
+    </div>
+  </div>
+  <div>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('meetings.meeting_detail', meeting_id=meeting.id) }}">Back to meeting</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- LEFT: chair controls + quorum -->
+  <div class="col-lg-3">
+    {% include "meetings/_partials/quorum_badge.html" %}
+
+    {% if meeting.status.value == 'in_progress' %}
+      <div class="card shadow-sm mt-3">
+        <div class="card-header">Chair controls</div>
+        <div class="card-body d-grid gap-2">
+          {% if next_stage %}
+          <form method="post" action="{{ url_for('live.advance_stage', meeting_id=meeting.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button class="btn btn-primary w-100">
+              Advance to: {{ stage_labels[next_stage] }}
+            </button>
+          </form>
+          {% endif %}
+          <form method="post" action="{{ url_for('live.adjourn', meeting_id=meeting.id) }}" onsubmit="return confirm('Adjourn the meeting?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button class="btn btn-outline-danger w-100">Adjourn meeting</button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="card shadow-sm mt-3">
+      <div class="card-header">Attendance (roll call)</div>
+      <ul class="list-group list-group-flush small">
+        {% for a in meeting.attendances %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>
+            {{ a.user.full_name }}
+            {% if a.user.is_voting_member %}<span class="badge bg-light text-dark">voting</span>{% endif %}
+          </span>
+          <form method="post" action="{{ url_for('live.toggle_attendance', meeting_id=meeting.id, user_id=a.user_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button class="btn btn-sm {{ 'btn-success' if a.is_present else 'btn-outline-secondary' }}">
+              {{ 'present' if a.is_present else 'absent' }}
+            </button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- CENTER: agenda + motion -->
+  <div class="col-lg-6">
+    <div class="card shadow-sm mb-3">
+      <div class="card-header">Agenda</div>
+      <ol class="list-group list-group-flush list-group-numbered small">
+        {% for item in meeting.agenda_items %}
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+          <div class="{% if meeting.current_agenda_item_id == item.id %}fw-bold{% endif %}">
+            {{ item.title }}
+            <div class="text-muted">{{ item.category.value.replace('_',' ') }}</div>
+          </div>
+          {% if current_user.role.value in ['chair', 'vice_chair', 'admin'] %}
+          <form method="post" action="{{ url_for('live.set_agenda_item', meeting_id=meeting.id, item_id=item.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button class="btn btn-sm btn-outline-primary">Take up</button>
+          </form>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    {% include "meetings/_partials/motion_card.html" %}
+
+    {% if meeting.status.value == 'in_progress' and current_user.is_voting_member and allowed_motion_types %}
+    <div class="card shadow-sm mt-3">
+      <div class="card-header">Make a motion</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('live.make_motion', meeting_id=meeting.id) }}">
+          {{ motion_form.hidden_tag() }}
+          {{ render_field(motion_form.text) }}
+          {{ render_field(motion_form.motion_type) }}
+          {{ render_field(motion_form.requires_majority) }}
+          {{ render_field(motion_form.vote_method) }}
+          {{ motion_form.submit(class="btn btn-primary") }}
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm mt-3">
+      <div class="card-header">Chair / secretary note</div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('live.chair_note', meeting_id=meeting.id) }}">
+          {{ note_form.hidden_tag() }}
+          {{ render_field(note_form.note) }}
+          {{ note_form.submit(class="btn btn-outline-primary") }}
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: minutes stream -->
+  <div class="col-lg-3">
+    {% include "meetings/_partials/minutes_stream.html" %}
+  </div>
+</div>
+{% endblock %}

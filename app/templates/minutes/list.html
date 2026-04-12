@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Minutes archive{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Minutes archive</h1>
+<div class="card shadow-sm">
+<table class="table table-hover mb-0">
+  <thead><tr><th>Meeting</th><th>Date</th><th>Status</th><th>Approved</th><th></th></tr></thead>
+  <tbody>
+    {% for m in meetings %}
+    <tr>
+      <td><a href="{{ url_for('minutes.detail', meeting_id=m.id) }}">{{ m.title }}</a></td>
+      <td>{{ m.scheduled_start.strftime('%Y-%m-%d') }}</td>
+      <td>{{ m.status.value }}</td>
+      <td>
+        {% if m.minutes_approved_at %}
+          <span class="text-success">{{ m.minutes_approved_at.strftime('%Y-%m-%d') }}</span>
+        {% else %}
+          <span class="text-muted">pending</span>
+        {% endif %}
+      </td>
+      <td class="text-end">
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('minutes.export_text', meeting_id=m.id) }}">Export</a>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="text-muted">No minutes yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

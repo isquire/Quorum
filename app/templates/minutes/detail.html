@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Minutes: {{ meeting.title }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="h3 mb-1">Minutes &mdash; {{ meeting.title }}</h1>
+    <div class="text-muted">
+      {{ meeting.scheduled_start.strftime('%a %b %d, %Y %H:%M UTC') }} &middot;
+      {{ meeting.location or 'No location' }}
+    </div>
+    <div class="mt-2">
+      {% if meeting.minutes_approved_at %}
+        <span class="badge bg-success">Approved {{ meeting.minutes_approved_at.strftime('%Y-%m-%d') }}</span>
+      {% else %}
+        <span class="badge bg-warning text-dark">Pending approval</span>
+      {% endif %}
+    </div>
+  </div>
+  <div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('minutes.export_text', meeting_id=meeting.id) }}">Export .txt</a>
+    {% if not meeting.minutes_approved_at and current_user.role.value in ['chair', 'vice_chair', 'admin'] %}
+    <form method="post" action="{{ url_for('minutes.approve', meeting_id=meeting.id) }}" class="d-inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button class="btn btn-success">Mark approved</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-header">Attendance</div>
+      <ul class="list-group list-group-flush small">
+        {% for a in meeting.attendances %}
+        <li class="list-group-item d-flex justify-content-between">
+          <span>{{ a.user.full_name }}</span>
+          <span>{% if a.is_present %}
+            <span class="text-success">present</span>
+          {% else %}
+            <span class="text-muted">absent</span>
+          {% endif %}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-header">Proceedings ({{ meeting.minutes_entries|length }} entries)</div>
+      <ol class="list-group list-group-flush">
+        {% for entry in meeting.minutes_entries %}
+        <li class="list-group-item">
+          <div class="text-muted small">{{ entry.timestamp.strftime('%H:%M:%S') }} &middot; {{ entry.entry_type.value.replace('_',' ') }}</div>
+          <div>{{ entry.text }}</div>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">No entries recorded.</li>
+        {% endfor %}
+      </ol>
+    </div>
+  </div>
+</div>
+{% endblock %}

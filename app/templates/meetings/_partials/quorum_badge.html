@@ -1,0 +1,16 @@
+<div class="card shadow-sm" hx-get="{{ url_for('live.fragment', meeting_id=meeting.id, name='quorum') }}" hx-trigger="every 5s" hx-swap="outerHTML">
+  <div class="card-body text-center">
+    <div class="text-muted small">Quorum</div>
+    <div class="display-6">
+      {{ meeting.present_count }} / {{ meeting.voting_member_count }}
+    </div>
+    {% if meeting.has_quorum %}
+      <span class="badge bg-success">QUORUM MET</span>
+    {% else %}
+      <span class="badge bg-danger">NO QUORUM</span>
+    {% endif %}
+    <div class="text-muted small mt-1">
+      Needs {{ meeting.quorum_threshold }} voting members present
+    </div>
+  </div>
+</div>

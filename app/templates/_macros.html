@@ -1,0 +1,36 @@
+{% macro render_field(field, help=None) %}
+<div class="mb-3">
+  {{ field.label(class="form-label") }}
+  {% if field.type == "BooleanField" %}
+    <div class="form-check">
+      {{ field(class="form-check-input") }}
+    </div>
+  {% elif field.type == "RadioField" %}
+    {% for subfield in field %}
+      <div class="form-check">
+        {{ subfield(class="form-check-input") }}
+        {{ subfield.label(class="form-check-label") }}
+      </div>
+    {% endfor %}
+  {% elif field.type == "SelectField" %}
+    {{ field(class="form-select") }}
+  {% elif field.type == "TextAreaField" %}
+    {{ field(class="form-control", rows=4) }}
+  {% else %}
+    {{ field(class="form-control") }}
+  {% endif %}
+  {% if help %}<div class="form-text">{{ help }}</div>{% endif %}
+  {% for error in field.errors %}
+    <div class="invalid-feedback d-block">{{ error }}</div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro role_badge(role) %}
+<span class="badge bg-secondary">{{ role.value.replace('_', ' ').title() }}</span>
+{% endmacro %}
+
+{% macro status_badge(status) %}
+{% set cls = {'scheduled': 'primary', 'in_progress': 'success', 'adjourned': 'secondary', 'cancelled': 'danger'}[status.value] %}
+<span class="badge bg-{{ cls }}">{{ status.value.replace('_', ' ').title() }}</span>
+{% endmacro %}
