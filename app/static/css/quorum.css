@@ -19,7 +19,39 @@ main {
 }
 
 blockquote.blockquote {
-    color: #333;
+    color: var(--bs-body-color);
     font-style: italic;
     border-left-width: 3px !important;
+}
+
+/* ── Dark mode adjustments ── */
+
+/* Navbar stays dark in both themes. */
+[data-bs-theme="dark"] .navbar-dark.bg-dark {
+    background-color: #1a1d20 !important;
+}
+
+/* Ensure the theme toggle button blends into the navbar. */
+#theme-toggle {
+    background: none;
+    font-size: 1.15rem;
+    padding: 0.25rem 0.5rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+/* Table rows with contextual classes in dark mode. */
+[data-bs-theme="dark"] .table-danger {
+    --bs-table-bg: #2c1215;
+    --bs-table-color: #f1aeb5;
+}
+
+[data-bs-theme="dark"] .table-active {
+    --bs-table-bg: #1e2a3a;
+}
+
+/* bg-light text-dark badges: make them readable in dark mode. */
+[data-bs-theme="dark"] .badge.bg-light.text-dark {
+    background-color: var(--bs-tertiary-bg) !important;
+    color: var(--bs-body-color) !important;
 }

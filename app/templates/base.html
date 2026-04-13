@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,6 +7,15 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/quorum.css') }}">
+  <script>
+    // Apply saved theme immediately to prevent flash of wrong theme.
+    (function(){
+      var t = localStorage.getItem('quorum-theme');
+      if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+      }
+    })();
+  </script>
 </head>
 <body class="bg-body-tertiary">
 <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
@@ -20,27 +29,64 @@
     <div class="collapse navbar-collapse" id="mainNav">
       {% if current_user.is_authenticated %}
       <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('meetings.list_meetings') }}">Meetings</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('meetings.list_templates') }}">Templates</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('minutes.list_minutes') }}">Minutes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('reports.list_reports') }}">Reports</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('boards.list_boards') }}">Boards</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('documents.list_documents') }}">Documents</a></li>
-        {% if current_user.role.value == 'admin' %}
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('users.list_users') }}">Users</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('users.admin_log') }}">Admin log</a></li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('main.dashboard') }}">Dashboard</a>
+        </li>
+
+        {# ── Meetings dropdown ── #}
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">Admin tools</a>
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">Meetings</a>
           <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('meetings.list_meetings') }}">All meetings</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('meetings.list_templates') }}">Templates</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('minutes.list_minutes') }}">Minutes</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('reports.list_reports') }}">Reports</a></li>
+          </ul>
+        </li>
+
+        {# ── Governance dropdown ── #}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">Governance</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('boards.list_boards') }}">Boards</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('boards.term_calendar') }}">Term calendar</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('documents.list_documents') }}">Documents</a></li>
+          </ul>
+        </li>
+
+        {# ── Admin dropdown (admin only) ── #}
+        {% if current_user.role.value == 'admin' %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">Admin</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ url_for('users.list_users') }}">Users</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('users.admin_log') }}">Admin log</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('main.annual_report') }}">Annual report</a></li>
+            <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="{{ url_for('users.backup_db') }}">Download backup</a></li>
             <li><a class="dropdown-item" href="{{ url_for('users.restore_db') }}">Restore database</a></li>
           </ul>
         </li>
         {% endif %}
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.guide') }}">Guide</a></li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('main.guide') }}">Guide</a>
+        </li>
       </ul>
+
       <ul class="navbar-nav">
+        {# ── Dark mode toggle ── #}
+        <li class="nav-item">
+          <button class="btn nav-link border-0" id="theme-toggle" type="button"
+                  title="Toggle dark mode" aria-label="Toggle dark mode">
+            <span id="theme-icon-light">&#9790;</span>
+            <span id="theme-icon-dark" style="display:none;">&#9788;</span>
+          </button>
+        </li>
+
+        {# ── User menu ── #}
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#">
             {{ current_user.full_name }}
@@ -79,6 +125,39 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/htmx.org@1.9.12" crossorigin="anonymous"></script>
+<script>
+(function(){
+  var html = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  var iconLight = document.getElementById('theme-icon-light');
+  var iconDark = document.getElementById('theme-icon-dark');
+
+  function applyTheme(theme) {
+    html.setAttribute('data-bs-theme', theme);
+    if (iconLight && iconDark) {
+      iconLight.style.display = theme === 'dark' ? 'none' : 'inline';
+      iconDark.style.display = theme === 'dark' ? 'inline' : 'none';
+    }
+  }
+
+  // Apply on load.
+  var saved = localStorage.getItem('quorum-theme');
+  if (saved) {
+    applyTheme(saved);
+  } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    applyTheme('dark');
+  }
+
+  if (btn) {
+    btn.addEventListener('click', function() {
+      var current = html.getAttribute('data-bs-theme');
+      var next = current === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('quorum-theme', next);
+      applyTheme(next);
+    });
+  }
+})();
+</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
