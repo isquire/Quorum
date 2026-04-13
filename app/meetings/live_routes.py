@@ -1,7 +1,11 @@
-"""Live meeting controller — the chair's cockpit.
+"""Live meeting controller — the officer's cockpit.
 
 This is where the RRO state machine runs: motions are made, seconded,
 amended, voted, and every action is auto-logged to the minutes timeline.
+
+Supports a secretary-driven workflow where the secretary can operate the
+entire meeting from a single device, recording motions, seconds, and votes
+on behalf of members who participate verbally.
 """
 from __future__ import annotations
 
@@ -81,6 +85,14 @@ def _require_secretary_or_chair(meeting: Meeting) -> None:
         abort(403)
 
 
+def _present_voters(meeting: Meeting) -> list[User]:
+    """Return list of present voting members for on-behalf dropdowns."""
+    return [
+        a.user for a in meeting.attendances
+        if a.is_present and a.user is not None and a.user.is_voting_member
+    ]
+
+
 def _active_motion(meeting: Meeting) -> Motion | None:
     """Return the innermost active motion (deepest amendment)."""
     motion = meeting.current_motion
@@ -138,12 +150,18 @@ def live(meeting_id: int):
             motion_id=active_motion.id, user_id=current_user.id
         ).first()
 
-    is_chair = (
-        current_user.role.value in CHAIR_ROLES
+    is_officer = (
+        current_user.role.value in SECRETARY_ROLES
         or _is_acting_chair(meeting)
     )
 
-    template = "meetings/live.html" if is_chair else "meetings/live_member.html"
+    # Secretary-driven workflow: present voters for on-behalf dropdowns.
+    present_voters = _present_voters(meeting)
+    motion_form.maker_id.choices = [(0, "— myself —")] + [
+        (u.id, u.full_name) for u in present_voters
+    ]
+
+    template = "meetings/live.html" if is_officer else "meetings/live_member.html"
     return render_template(
         template,
         meeting=meeting,
@@ -155,6 +173,7 @@ def live(meeting_id: int):
         my_vote=my_vote,
         allowed_motion_types=allowed_types,
         next_stage=next_stage(meeting.current_stage, meeting.meeting_type),
+        present_voters=present_voters,
     )
 
 
@@ -167,7 +186,7 @@ def live(meeting_id: int):
 @login_required
 def call_to_order(meeting_id: int):
     meeting = _get_meeting(meeting_id)
-    _require_chair_or_vice(meeting)
+    _require_secretary_or_chair(meeting)
 
     if meeting.status != MeetingStatus.scheduled:
         flash("Meeting already started or ended.", "warning")
@@ -190,7 +209,7 @@ def call_to_order(meeting_id: int):
 @login_required
 def advance_stage(meeting_id: int):
     meeting = _get_meeting(meeting_id)
-    _require_chair_or_vice(meeting)
+    _require_secretary_or_chair(meeting)
     if meeting.status != MeetingStatus.in_progress:
         flash("Meeting is not in progress.", "warning")
         return redirect(url_for("live.live", meeting_id=meeting_id))
@@ -219,7 +238,7 @@ def advance_stage(meeting_id: int):
 @login_required
 def set_agenda_item(meeting_id: int, item_id: int):
     meeting = _get_meeting(meeting_id)
-    _require_chair_or_vice(meeting)
+    _require_secretary_or_chair(meeting)
     item = next(
         (i for i in meeting.agenda_items if i.id == item_id), None
     )
@@ -235,7 +254,7 @@ def set_agenda_item(meeting_id: int, item_id: int):
 @login_required
 def adjourn(meeting_id: int):
     meeting = _get_meeting(meeting_id)
-    _require_chair_or_vice(meeting)
+    _require_secretary_or_chair(meeting)
     meeting.status = MeetingStatus.adjourned
     meeting.current_stage = MeetingStage.adjourned
     meeting.adjourned_at = now_eastern()
@@ -300,15 +319,24 @@ def mark_notified(meeting_id: int, user_id: int):
 
 
 @bp.route("/motions", methods=["POST"])
-@voting_member_required
+@login_required
 def make_motion(meeting_id: int):
     meeting = _get_meeting(meeting_id)
     if meeting.status != MeetingStatus.in_progress:
         flash("Meeting is not in session.", "warning")
         return redirect(url_for("live.live", meeting_id=meeting_id))
 
+    # Secretary-driven: allow officers to make motions on behalf of members.
+    is_secretary = current_user.role.value in SECRETARY_ROLES
+    if not is_secretary and not current_user.is_voting_member:
+        abort(403)
+
     form = MotionForm()
     # Re-populate choices so WTForms validates.
+    present_voters = _present_voters(meeting)
+    form.maker_id.choices = [(0, "— myself —")] + [
+        (u.id, u.full_name) for u in present_voters
+    ]
     active = _active_motion(meeting)
     allowed = available_motion_types(
         meeting.current_stage,
@@ -328,13 +356,29 @@ def make_motion(meeting_id: int):
         flash(f"A {motion_type.value} motion is not allowed right now.", "danger")
         return redirect(url_for("live.live", meeting_id=meeting_id))
 
+    # Determine the actual maker.
+    maker_id_value = form.maker_id.data
+    if is_secretary and maker_id_value and maker_id_value != 0:
+        # Secretary recording on behalf of a member.
+        maker = User.query.get(maker_id_value)
+        if not maker or not maker.is_voting_member:
+            flash("Selected member is not a voting member.", "danger")
+            return redirect(url_for("live.live", meeting_id=meeting_id))
+        actual_maker_id = maker.id
+    elif current_user.is_voting_member:
+        actual_maker_id = current_user.id
+    else:
+        # Secretary didn't pick a member and isn't a voting member.
+        flash("Please select a member on whose behalf to make this motion.", "danger")
+        return redirect(url_for("live.live", meeting_id=meeting_id))
+
     motion = Motion(
         meeting_id=meeting.id,
         agenda_item_id=meeting.current_agenda_item_id,
         parent_motion_id=active.id if active and motion_type == MotionType.amendment else None,
         motion_type=motion_type,
         text=form.text.data.strip(),
-        maker_id=current_user.id,
+        maker_id=actual_maker_id,
         status=MotionStatus.proposed,
         requires_majority=MajorityRule(form.requires_majority.data),
         vote_method=VoteMethod(form.vote_method.data),
@@ -360,20 +404,41 @@ def make_motion(meeting_id: int):
 
 
 @bp.route("/motions/<int:motion_id>/second", methods=["POST"])
-@voting_member_required
+@login_required
 def second_motion(meeting_id: int, motion_id: int):
     meeting = _get_meeting(meeting_id)
+    is_secretary = current_user.role.value in SECRETARY_ROLES
+    if not is_secretary and not current_user.is_voting_member:
+        abort(403)
+
     motion = Motion.query.get_or_404(motion_id)
     if motion.meeting_id != meeting.id:
         abort(404)
     if motion.status != MotionStatus.proposed:
         flash("Motion is not awaiting a second.", "warning")
         return redirect(url_for("live.live", meeting_id=meeting_id))
-    if motion.maker_id == current_user.id:
-        flash("You cannot second your own motion.", "danger")
+
+    # Determine the actual seconder.
+    seconder_id_value = request.form.get("seconder_id", 0, type=int)
+    if is_secretary and seconder_id_value:
+        seconder = User.query.get(seconder_id_value)
+        if not seconder or not seconder.is_voting_member:
+            flash("Selected member is not a voting member.", "danger")
+            return redirect(url_for("live.live", meeting_id=meeting_id))
+        if seconder.id == motion.maker_id:
+            flash("The seconder cannot be the same person who made the motion.", "danger")
+            return redirect(url_for("live.live", meeting_id=meeting_id))
+        actual_seconder_id = seconder.id
+    elif current_user.is_voting_member:
+        if motion.maker_id == current_user.id:
+            flash("You cannot second your own motion.", "danger")
+            return redirect(url_for("live.live", meeting_id=meeting_id))
+        actual_seconder_id = current_user.id
+    else:
+        flash("Please select a member on whose behalf to second.", "danger")
         return redirect(url_for("live.live", meeting_id=meeting_id))
 
-    motion.seconder_id = current_user.id
+    motion.seconder_id = actual_seconder_id
     motion.status = MotionStatus.seconded
     db.session.flush()
     db.session.refresh(motion)
@@ -390,7 +455,11 @@ def withdraw_motion(meeting_id: int, motion_id: int):
     motion = Motion.query.get_or_404(motion_id)
     if motion.meeting_id != meeting.id:
         abort(404)
-    if motion.maker_id != current_user.id and current_user.role != Role.admin:
+    if (
+        motion.maker_id != current_user.id
+        and current_user.role != Role.admin
+        and current_user.role.value not in SECRETARY_ROLES
+    ):
         abort(403)
     if motion.status not in {MotionStatus.proposed, MotionStatus.seconded}:
         flash("Cannot withdraw a motion at this stage.", "warning")
@@ -409,7 +478,7 @@ def withdraw_motion(meeting_id: int, motion_id: int):
 @login_required
 def open_vote(meeting_id: int, motion_id: int):
     meeting = _get_meeting(meeting_id)
-    _require_chair_or_vice(meeting)
+    _require_secretary_or_chair(meeting)
     motion = Motion.query.get_or_404(motion_id)
     if motion.meeting_id != meeting.id:
         abort(404)
@@ -482,7 +551,7 @@ def cast_vote(meeting_id: int, motion_id: int):
 @login_required
 def close_vote(meeting_id: int, motion_id: int):
     meeting = _get_meeting(meeting_id)
-    _require_chair_or_vice(meeting)
+    _require_secretary_or_chair(meeting)
     motion = Motion.query.get_or_404(motion_id)
     if motion.meeting_id != meeting.id:
         abort(404)
@@ -516,9 +585,9 @@ def close_vote(meeting_id: int, motion_id: int):
 @bp.route("/motions/<int:motion_id>/manual-tally", methods=["POST"])
 @login_required
 def enter_manual_tally(meeting_id: int, motion_id: int):
-    """Chair enters yes/no/abstain counts for voice or show-of-hands votes."""
+    """Chair/secretary enters yes/no/abstain counts for voice or show-of-hands votes."""
     meeting = _get_meeting(meeting_id)
-    _require_chair_or_vice(meeting)
+    _require_secretary_or_chair(meeting)
 
     motion = Motion.query.get_or_404(motion_id)
     if motion.meeting_id != meeting.id:
@@ -537,6 +606,70 @@ def enter_manual_tally(meeting_id: int, motion_id: int):
     motion.abstain_count = form.abstain_count.data
     db.session.commit()
     flash("Tally recorded.", "success")
+    return redirect(url_for("live.live", meeting_id=meeting_id))
+
+
+# ---------------------------------------------------------------------------
+# Secretary roll-call voting (record each member's vote on their behalf)
+# ---------------------------------------------------------------------------
+
+
+@bp.route("/motions/<int:motion_id>/secretary-roll-call", methods=["POST"])
+@login_required
+def secretary_cast_votes(meeting_id: int, motion_id: int):
+    """Secretary records individual roll-call votes on behalf of members."""
+    meeting = _get_meeting(meeting_id)
+    _require_secretary_or_chair(meeting)
+
+    motion = Motion.query.get_or_404(motion_id)
+    if motion.meeting_id != meeting.id:
+        abort(404)
+    if motion.status != MotionStatus.voting:
+        flash("Voting is not open on this motion.", "warning")
+        return redirect(url_for("live.live", meeting_id=meeting_id))
+    if motion.vote_method != VoteMethod.roll_call:
+        flash("Secretary roll-call is only for roll-call votes.", "warning")
+        return redirect(url_for("live.live", meeting_id=meeting_id))
+
+    present_voters = _present_voters(meeting)
+    valid_choices = {c.value for c in VoteChoice}
+    recorded = 0
+
+    for voter in present_voters:
+        choice_val = request.form.get(f"vote_{voter.id}")
+        if not choice_val or choice_val not in valid_choices:
+            continue
+
+        # Constitution Art VIII §6 — deacons-only vote enforcement.
+        if motion.deacons_only and meeting.board_id:
+            membership = BoardMembership.query.filter_by(
+                user_id=voter.id, board_id=meeting.board_id
+            ).first()
+            if not membership or membership.role_on_board not in (
+                BoardRole.pastor, BoardRole.deacon
+            ):
+                continue
+
+        choice = VoteChoice(choice_val)
+        existing = Vote.query.filter_by(
+            motion_id=motion.id, user_id=voter.id
+        ).first()
+        if existing is None:
+            db.session.add(Vote(
+                motion_id=motion.id,
+                user_id=voter.id,
+                choice=choice,
+                cast_at=now_eastern(),
+            ))
+        else:
+            existing.choice = choice
+            existing.cast_at = now_eastern()
+        recorded += 1
+
+    db.session.flush()
+    motion.recount()
+    db.session.commit()
+    flash(f"Recorded {recorded} vote(s).", "success")
     return redirect(url_for("live.live", meeting_id=meeting_id))
 
 
@@ -585,5 +718,6 @@ def fragment(meeting_id: int, name: str):
             "meetings/_partials/motion_card.html",
             meeting=meeting,
             active_motion=_active_motion(meeting),
+            present_voters=_present_voters(meeting),
         )
     abort(404)

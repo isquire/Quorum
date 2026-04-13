@@ -132,6 +132,13 @@ class MotionForm(FlaskForm):
         ],
         validators=[DataRequired()],
     )
+    # Secretary-driven workflow: record who made the motion on their behalf.
+    maker_id = SelectField(
+        "On behalf of",
+        choices=[],
+        validators=[Optional()],
+        coerce=int,
+    )
     # Constitution Art VIII §6 — only pastor and deacons vote.
     deacons_only = BooleanField(
         "Deacons-only vote (Board of Admin only)",

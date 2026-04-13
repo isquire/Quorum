@@ -29,7 +29,22 @@
       </div>
 
       {% if active_motion.status.value == 'proposed' %}
-        {% if current_user.is_voting_member and current_user.id != active_motion.maker_id %}
+        {# --- Secretary on-behalf second --- #}
+        {% if current_user.role.value in secretary_roles %}
+        <form method="post" action="{{ url_for('live.second_motion', meeting_id=meeting.id, motion_id=active_motion.id) }}" class="mb-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <div class="input-group input-group-sm">
+            <select name="seconder_id" class="form-select form-select-sm" required>
+              <option value="">Select who seconds...</option>
+              {% for v in present_voters|default([]) if v.id != active_motion.maker_id %}
+              <option value="{{ v.id }}">{{ v.full_name }}</option>
+              {% endfor %}
+            </select>
+            <button class="btn btn-primary">Second on behalf</button>
+          </div>
+        </form>
+        {# --- Regular member self-second --- #}
+        {% elif current_user.is_voting_member and current_user.id != active_motion.maker_id %}
         <form method="post" action="{{ url_for('live.second_motion', meeting_id=meeting.id, motion_id=active_motion.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <button class="btn btn-primary">I second the motion</button>
@@ -37,14 +52,15 @@
         {% else %}
           <p class="text-muted">Awaiting a second.</p>
         {% endif %}
-        {% if current_user.id == active_motion.maker_id %}
+        {# --- Withdraw (maker, admin, or secretary) --- #}
+        {% if current_user.id == active_motion.maker_id or current_user.role.value in secretary_roles %}
         <form method="post" action="{{ url_for('live.withdraw_motion', meeting_id=meeting.id, motion_id=active_motion.id) }}" class="mt-2">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <button class="btn btn-sm btn-outline-secondary">Withdraw</button>
         </form>
         {% endif %}
       {% elif active_motion.status.value in ['seconded', 'debating'] %}
-        {% if current_user.role.value in chair_roles %}
+        {% if current_user.role.value in secretary_roles %}
         <form method="post" action="{{ url_for('live.open_vote', meeting_id=meeting.id, motion_id=active_motion.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <button class="btn btn-success">Open vote</button>
@@ -60,10 +76,33 @@
         </div>
 
         {% if active_motion.vote_method.value == 'roll_call' %}
-          {# Roll call: members vote individually through the app #}
-          {% if current_user.is_voting_member %}
+          {# --- Secretary roll-call grid --- #}
+          {% if current_user.role.value in secretary_roles %}
+          <form method="post" action="{{ url_for('live.secretary_cast_votes', meeting_id=meeting.id, motion_id=active_motion.id) }}" class="mb-3">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <table class="table table-sm small mb-2">
+              <thead><tr><th>Member</th><th>Yes</th><th>No</th><th>Abstain</th></tr></thead>
+              <tbody>
+              {% for v in present_voters|default([]) %}
+                {% set existing_vote = None %}
+                {% for vote in active_motion.votes if vote.user_id == v.id %}
+                  {% set existing_vote = vote.choice.value %}
+                {% endfor %}
+                <tr>
+                  <td>{{ v.full_name }}</td>
+                  <td><input type="radio" name="vote_{{ v.id }}" value="yes" class="form-check-input" {{ 'checked' if existing_vote == 'yes' }}></td>
+                  <td><input type="radio" name="vote_{{ v.id }}" value="no" class="form-check-input" {{ 'checked' if existing_vote == 'no' }}></td>
+                  <td><input type="radio" name="vote_{{ v.id }}" value="abstain" class="form-check-input" {{ 'checked' if existing_vote == 'abstain' }}></td>
+                </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+            <button class="btn btn-sm btn-primary">Record all votes</button>
+          </form>
+          {# --- Regular member self-vote --- #}
+          {% elif current_user.is_voting_member %}
           <form method="post" action="{{ url_for('live.cast_vote', meeting_id=meeting.id, motion_id=active_motion.id) }}" class="mb-3">
-            {{ vote_form.hidden_tag() }}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="btn-group" role="group">
               <button type="submit" name="choice" value="yes" class="btn btn-success">Yes</button>
               <button type="submit" name="choice" value="no" class="btn btn-danger">No</button>
@@ -72,10 +111,10 @@
           </form>
           {% endif %}
         {% else %}
-          {# Voice / show-of-hands: chair enters the tally manually #}
-          {% if current_user.role.value in chair_roles %}
+          {# Voice / show-of-hands: officer enters the tally manually #}
+          {% if current_user.role.value in secretary_roles %}
           <form method="post" action="{{ url_for('live.enter_manual_tally', meeting_id=meeting.id, motion_id=active_motion.id) }}" class="mb-3">
-            {{ manual_tally_form.hidden_tag() }}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="row g-2 align-items-end">
               <div class="col-auto">
                 <label class="form-label small mb-0">Yes</label>
@@ -99,7 +138,7 @@
           {% endif %}
         {% endif %}
 
-        {% if current_user.role.value in chair_roles %}
+        {% if current_user.role.value in secretary_roles %}
         <form method="post" action="{{ url_for('live.close_vote', meeting_id=meeting.id, motion_id=active_motion.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <button class="btn btn-warning">Close vote &amp; announce result</button>
