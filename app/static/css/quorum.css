@@ -24,6 +24,21 @@ blockquote.blockquote {
     border-left-width: 3px !important;
 }
 
+/* ── Logo ── */
+
+/* Logo in navbar: white to match navbar-dark text. */
+.navbar-dark .navbar-logo {
+    filter: brightness(0) invert(1);
+}
+
+/* Login page logo: navy blue in light mode, light in dark mode. */
+.login-logo {
+    color: #1b365d;
+}
+[data-bs-theme="dark"] .login-logo {
+    color: #8eafd0;
+}
+
 /* ── Dark mode adjustments ── */
 
 /* Navbar stays dark in both themes. */

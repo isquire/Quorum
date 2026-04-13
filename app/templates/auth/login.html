@@ -4,9 +4,12 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-5">
+    <div class="text-center mb-4">
+      <img src="{{ url_for('static', filename='img/logo-full.svg') }}" alt="Quorum" width="140" class="login-logo">
+    </div>
     <div class="card shadow-sm">
       <div class="card-body">
-        <h1 class="h4 mb-3">Sign in to Quorum</h1>
+        <h1 class="h4 mb-3">Sign in</h1>
         <form method="post">
           {{ form.hidden_tag() }}
           {{ render_field(form.email) }}

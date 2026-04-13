@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="currentColor">
+  <!-- Top-left person -->
+  <circle cx="46" cy="32" r="16"/>
+  <path d="M16,72 Q16,48 46,48 Q76,48 76,72 Z"/>
+
+  <!-- Top-right person -->
+  <circle cx="154" cy="32" r="16"/>
+  <path d="M124,72 Q124,48 154,48 Q184,48 184,72 Z"/>
+
+  <!-- Bottom-left person -->
+  <circle cx="46" cy="132" r="16"/>
+  <path d="M16,172 Q16,148 46,148 Q76,148 76,172 Z"/>
+
+  <!-- Bottom-right person -->
+  <circle cx="154" cy="132" r="16"/>
+  <path d="M124,172 Q124,148 154,148 Q184,148 184,172 Z"/>
+
+  <!-- Center document -->
+  <path d="M76,52 L76,148 L124,148 L124,68 L108,52 Z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M108,52 L108,68 L124,68" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>
+  <line x1="88" y1="82" x2="112" y2="82" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+  <line x1="88" y1="96" x2="112" y2="96" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+  <line x1="88" y1="110" x2="112" y2="110" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+</svg>
