@@ -6,6 +6,7 @@ from ..admin_log import log_admin_action
 from ..extensions import db
 from ..models import Document, DocumentCategory, DocumentVersion
 from ..permissions import admin_required
+from ..utils import upload_path
 from . import bp
 
 
@@ -154,6 +155,12 @@ def edit_document(doc_id: int):
 def delete_document(doc_id: int):
     doc = Document.query.get_or_404(doc_id)
     title = doc.title
+    # Remove attachment files from disk before cascade-deleting the records.
+    for att in doc.attachments:
+        try:
+            upload_path(att.filename).unlink(missing_ok=True)
+        except OSError:
+            pass
     log_admin_action(
         current_user.id, "delete_document", "document", doc.id,
         f'Deleted document "{title}".',

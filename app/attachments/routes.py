@@ -10,7 +10,7 @@ from flask import (
 from flask_login import current_user, login_required
 
 from ..extensions import db
-from ..models import AgendaItem, Attachment, Meeting, Report, Role
+from ..models import AgendaItem, Attachment, Document, Meeting, Report, Role
 from ..utils import allowed_upload, save_upload, upload_path
 from . import bp
 
@@ -45,6 +45,12 @@ def upload():
             abort(403)
         kwargs["report_id"] = report.id
         back = url_for("reports.detail", report_id=report.id)
+    elif context_type == "document":
+        doc = Document.query.get_or_404(context_id)
+        if current_user.role != Role.admin:
+            abort(403)
+        kwargs["document_id"] = doc.id
+        back = url_for("documents.view_document", doc_id=doc.id)
     else:
         abort(400)
 

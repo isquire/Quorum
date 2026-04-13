@@ -29,6 +29,7 @@
         </h5>
         <span class="badge bg-secondary">{{ doc.category.value.replace('_', ' ').title() }}</span>
         <span class="badge bg-light text-dark">v{{ doc.current_version }}</span>
+        {% if doc.attachments %}<span class="badge bg-light text-dark">{{ doc.attachments|length }} file{{ 's' if doc.attachments|length != 1 }}</span>{% endif %}
       </div>
       <div class="card-footer bg-transparent small text-muted">
         Updated by {{ doc.updated_by.full_name }}

@@ -1069,7 +1069,8 @@ class Attachment(TimestampMixin, db.Model):
         CheckConstraint(
             "(CASE WHEN meeting_id IS NULL THEN 0 ELSE 1 END"
             " + CASE WHEN agenda_item_id IS NULL THEN 0 ELSE 1 END"
-            " + CASE WHEN report_id IS NULL THEN 0 ELSE 1 END) = 1",
+            " + CASE WHEN report_id IS NULL THEN 0 ELSE 1 END"
+            " + CASE WHEN document_id IS NULL THEN 0 ELSE 1 END) = 1",
             name="ck_attachment_single_parent",
         ),
     )
@@ -1095,6 +1096,9 @@ class Attachment(TimestampMixin, db.Model):
     report_id = db.Column(
         db.Integer, db.ForeignKey("reports.id"), nullable=True
     )
+    document_id = db.Column(
+        db.Integer, db.ForeignKey("documents.id"), nullable=True
+    )
 
     uploaded_by = db.relationship(
         "User", back_populates="uploaded_attachments"
@@ -1107,6 +1111,9 @@ class Attachment(TimestampMixin, db.Model):
     )
     report = db.relationship(
         "Report", back_populates="attachments", foreign_keys=[report_id]
+    )
+    document = db.relationship(
+        "Document", back_populates="attachments", foreign_keys=[document_id]
     )
 
 
@@ -1192,6 +1199,12 @@ class Document(TimestampMixin, db.Model):
         back_populates="document",
         cascade="all, delete-orphan",
         order_by="DocumentVersion.version.desc()",
+    )
+    attachments = db.relationship(
+        "Attachment",
+        back_populates="document",
+        cascade="all, delete-orphan",
+        order_by="Attachment.uploaded_at.desc()",
     )
 
 

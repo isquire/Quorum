@@ -2,12 +2,14 @@
 annual report, meeting templates, document repository."""
 from __future__ import annotations
 
+import io
 from datetime import datetime, date
 
 import pytest
 
 from app.extensions import db
 from app.models import (
+    Attachment,
     AdminAction,
     Document,
     DocumentCategory,
@@ -442,3 +444,116 @@ def test_document_filter_by_category(client, admin):
     assert resp.status_code == 200
     assert b"Church Bylaws Doc" in resp.data
     assert b"Safety Procedures Manual" not in resp.data
+
+
+# ---------------------------------------------------------------------------
+# Document attachments
+# ---------------------------------------------------------------------------
+
+
+def test_upload_attachment_to_document(client, admin):
+    login(client, "admin@example.com")
+    doc = Document(
+        title="Bylaws with File",
+        category=DocumentCategory.bylaws,
+        content="text",
+        updated_by_id=admin.id,
+    )
+    db.session.add(doc)
+    db.session.commit()
+
+    resp = client.post(
+        "/files/upload",
+        data={
+            "context_type": "document",
+            "context_id": str(doc.id),
+            "file": (io.BytesIO(b"%PDF-1.4 bylaws pdf"), "bylaws.pdf"),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    att = Attachment.query.filter_by(document_id=doc.id).first()
+    assert att is not None
+    assert att.original_filename == "bylaws.pdf"
+    assert att.document_id == doc.id
+
+
+def test_document_view_shows_attachments(client, admin):
+    login(client, "admin@example.com")
+    doc = Document(
+        title="Doc With Attachment",
+        category=DocumentCategory.policy,
+        content="content",
+        updated_by_id=admin.id,
+    )
+    db.session.add(doc)
+    db.session.flush()
+    att = Attachment(
+        filename="stored_test.pdf",
+        original_filename="report.pdf",
+        mime_type="application/pdf",
+        size_bytes=1024,
+        uploaded_by_id=admin.id,
+        document_id=doc.id,
+    )
+    db.session.add(att)
+    db.session.commit()
+
+    resp = client.get(f"/documents/{doc.id}")
+    assert resp.status_code == 200
+    assert b"report.pdf" in resp.data
+    assert b"Attachments" in resp.data
+
+
+def test_document_upload_requires_admin(client, member):
+    login(client, "member@example.com")
+    doc = Document(
+        title="Admin Only Upload",
+        category=DocumentCategory.other,
+        content="x",
+        updated_by_id=member.id,
+    )
+    db.session.add(doc)
+    db.session.commit()
+
+    resp = client.post(
+        "/files/upload",
+        data={
+            "context_type": "document",
+            "context_id": str(doc.id),
+            "file": (io.BytesIO(b"data"), "file.txt"),
+        },
+        content_type="multipart/form-data",
+    )
+    assert resp.status_code == 403
+
+
+def test_delete_document_removes_attachments(client, admin):
+    login(client, "admin@example.com")
+    doc = Document(
+        title="Doc To Delete",
+        category=DocumentCategory.other,
+        content="x",
+        updated_by_id=admin.id,
+    )
+    db.session.add(doc)
+    db.session.flush()
+    att = Attachment(
+        filename="will_be_deleted.pdf",
+        original_filename="file.pdf",
+        mime_type="application/pdf",
+        size_bytes=100,
+        uploaded_by_id=admin.id,
+        document_id=doc.id,
+    )
+    db.session.add(att)
+    db.session.commit()
+    att_id = att.id
+
+    resp = client.post(
+        f"/documents/{doc.id}/delete",
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    assert Attachment.query.get(att_id) is None
