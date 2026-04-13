@@ -144,6 +144,75 @@ def test_minutes_detail_has_print_link(client, admin, meeting_obj):
 
 
 # ---------------------------------------------------------------------------
+# Edit agenda items
+# ---------------------------------------------------------------------------
+
+
+def test_edit_agenda_item_page_loads(client, secretary, meeting_obj):
+    login(client, "sec@example.com")
+    item = AgendaItem(
+        meeting_id=meeting_obj.id,
+        order_index=1,
+        category=AgendaCategory.new_business,
+        title="Original title",
+    )
+    db.session.add(item)
+    db.session.commit()
+
+    resp = client.get(f"/meetings/{meeting_obj.id}/agenda/items/{item.id}/edit")
+    assert resp.status_code == 200
+    assert b"Original title" in resp.data
+    assert b"Edit agenda item" in resp.data
+
+
+def test_edit_agenda_item_updates_fields(client, secretary, meeting_obj):
+    login(client, "sec@example.com")
+    item = AgendaItem(
+        meeting_id=meeting_obj.id,
+        order_index=1,
+        category=AgendaCategory.new_business,
+        title="Old title",
+        is_confidential=False,
+    )
+    db.session.add(item)
+    db.session.commit()
+
+    resp = client.post(
+        f"/meetings/{meeting_obj.id}/agenda/items/{item.id}/edit",
+        data={
+            "title": "Updated title",
+            "category": "report",
+            "description": "Added detail",
+            "presenter_id": 0,
+            "is_confidential": "y",
+        },
+        follow_redirects=True,
+    )
+    assert resp.status_code == 200
+    db.session.refresh(item)
+    assert item.title == "Updated title"
+    assert item.category == AgendaCategory.report
+    assert item.description == "Added detail"
+    assert item.is_confidential is True
+
+
+def test_edit_agenda_item_shows_edit_button(client, secretary, meeting_obj):
+    login(client, "sec@example.com")
+    item = AgendaItem(
+        meeting_id=meeting_obj.id,
+        order_index=1,
+        category=AgendaCategory.new_business,
+        title="Some item",
+    )
+    db.session.add(item)
+    db.session.commit()
+
+    resp = client.get(f"/meetings/{meeting_obj.id}/agenda/")
+    assert resp.status_code == 200
+    assert b"Edit" in resp.data
+
+
+# ---------------------------------------------------------------------------
 # Term expiration calendar
 # ---------------------------------------------------------------------------
 

@@ -23,6 +23,7 @@
           </div>
           {% if current_user.role.value in ['chair', 'vice_chair', 'secretary', 'admin'] %}
           <div class="btn-group btn-group-sm">
+            <a class="btn btn-outline-secondary" href="{{ url_for('agendas.edit_item', meeting_id=meeting.id, item_id=item.id) }}">Edit</a>
             <form method="post" action="{{ url_for('agendas.move_item', meeting_id=meeting.id, item_id=item.id) }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <input type="hidden" name="direction" value="up"/>

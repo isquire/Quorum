@@ -79,6 +79,37 @@ def delete_item(meeting_id: int, item_id: int):
     return redirect(url_for("agendas.view_agenda", meeting_id=meeting_id))
 
 
+@bp.route("/items/<int:item_id>/edit", methods=["GET", "POST"])
+@role_required(Role.chair, Role.vice_chair, Role.secretary)
+def edit_item(meeting_id: int, item_id: int):
+    meeting = _load_meeting(meeting_id)
+    item = next((i for i in meeting.agenda_items if i.id == item_id), None)
+    if item is None:
+        abort(404)
+
+    form = AgendaItemForm(obj=item)
+    _populate_presenters(form)
+
+    if form.validate_on_submit():
+        item.title = form.title.data.strip()
+        item.category = AgendaCategory(form.category.data)
+        item.description = (form.description.data or "").strip()
+        presenter_id = form.presenter_id.data or None
+        item.presenter_id = None if presenter_id == 0 else presenter_id
+        item.is_confidential = form.is_confidential.data
+        db.session.commit()
+        flash("Agenda item updated.", "success")
+        return redirect(url_for("agendas.view_agenda", meeting_id=meeting_id))
+
+    if not form.is_submitted():
+        form.category.data = item.category.value
+        form.presenter_id.data = item.presenter_id or 0
+
+    return render_template(
+        "agendas/edit_item.html", meeting=meeting, item=item, form=form,
+    )
+
+
 @bp.route("/items/<int:item_id>/move", methods=["POST"])
 @role_required(Role.chair, Role.vice_chair, Role.secretary)
 def move_item(meeting_id: int, item_id: int):

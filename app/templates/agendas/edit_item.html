@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import render_field %}
+{% block title %}Edit: {{ item.title }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h3 mb-0">Edit agenda item</h1>
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('agendas.view_agenda', meeting_id=meeting.id) }}">&larr; Back to agenda</a>
+    </div>
+    <p class="text-muted">{{ meeting.title }}</p>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <form method="post">
+          {{ form.hidden_tag() }}
+          {{ render_field(form.title) }}
+          {{ render_field(form.category) }}
+          {{ render_field(form.description) }}
+          {{ render_field(form.presenter_id) }}
+          {{ render_field(form.is_confidential, help="Minutes entries recorded under this item will be redacted for non-officers.") }}
+          <div class="d-flex gap-2">
+            {{ form.submit(class="btn btn-primary") }}
+            <a class="btn btn-outline-secondary" href="{{ url_for('agendas.view_agenda', meeting_id=meeting.id) }}">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
