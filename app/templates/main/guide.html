@@ -237,14 +237,21 @@
       <p>This is the heart of Robert&rsquo;s Rules. Quorum walks every motion through the same lifecycle:</p>
       <ol>
         <li>
-          <strong>Make.</strong> Any voting member clicks <em>Make a motion</em>,
-          types the motion text (&ldquo;I move that we&hellip;&rdquo;), and
-          submits. Status: <span class="badge bg-secondary">proposed</span>.
+          <strong>Make.</strong> A voting member makes a motion. There are two ways this can happen:
+          <ul>
+            <li><strong>Self-service:</strong> the member clicks <em>Make a motion</em> on their own device, types the motion text (&ldquo;I move that we&hellip;&rdquo;), and submits.</li>
+            <li><strong>Secretary on behalf:</strong> if the member is participating verbally (no device), the secretary or chair uses the <em>&ldquo;On behalf of&rdquo;</em> dropdown in the motion form to select the member who spoke, then types the motion text and submits. The minutes will correctly attribute the motion to that member.</li>
+          </ul>
+          Status: <span class="badge bg-secondary">proposed</span>.
         </li>
         <li>
-          <strong>Second.</strong> A <em>different</em> voting member clicks
-          <em>Second</em>. A maker cannot second their own motion &mdash;
-          Quorum enforces this. Status: <span class="badge bg-info text-dark">seconded</span>.
+          <strong>Second.</strong> A <em>different</em> voting member seconds the motion. Again, two ways:
+          <ul>
+            <li><strong>Self-service:</strong> the member clicks <em>I second the motion</em> on their device.</li>
+            <li><strong>Secretary on behalf:</strong> the secretary selects the seconding member from the dropdown and clicks <em>Second on behalf</em>.</li>
+          </ul>
+          A maker cannot second their own motion &mdash; Quorum enforces this.
+          Status: <span class="badge bg-info text-dark">seconded</span>.
         </li>
         <li>
           <strong>Debate.</strong> The chair recognizes members to speak for
@@ -252,17 +259,19 @@
           debate verbally.
         </li>
         <li>
-          <strong>Open vote.</strong> Chair clicks <em>Open vote</em>. Status:
+          <strong>Open vote.</strong> The chair or secretary clicks <em>Open vote</em>. Status:
           <span class="badge bg-warning text-dark">voting</span>.
-          Every voting member now sees Yes / No / Abstain buttons.
         </li>
         <li>
-          <strong>Cast votes.</strong> Members click their choice. The live
-          tally updates in real time. Members can change their vote up until
-          the chair closes the vote.
+          <strong>Cast votes.</strong> How votes are recorded depends on the vote method:
+          <ul>
+            <li><strong>Roll call (per-member):</strong> each voting member sees Yes / No / Abstain buttons and clicks their choice. Alternatively, the secretary can record everyone&rsquo;s vote using the roll-call grid &mdash; a table showing each present voting member with Yes / No / Abstain options. Click <em>Record all votes</em> to submit.</li>
+            <li><strong>Voice / show-of-hands:</strong> members vote aloud or by raising hands. The chair or secretary enters the Yes, No, and Abstain counts manually.</li>
+          </ul>
+          The live tally updates in real time. Members can change their vote until the vote is closed.
         </li>
         <li>
-          <strong>Close vote.</strong> Chair clicks <em>Close vote</em>. The
+          <strong>Close vote.</strong> The chair or secretary clicks <em>Close vote</em>. The
           result is computed (simple or two-thirds majority, depending on the
           motion type &mdash; abstentions never count toward the total) and
           written to the minutes as: <em>&ldquo;Motion by A. Smith to X &mdash;
