@@ -1,27 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" fill="currentColor">
+  <!-- Speech bubble outline -->
+  <path d="M20,16 h160 a16,16 0 0 1 16,16 v120 a16,16 0 0 1 -16,16 h-120 l-28,28 v-28 h-12 a16,16 0 0 1 -16,-16 v-120 a16,16 0 0 1 16,-16 z"
+        fill="none" stroke="currentColor" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- Vertical divider -->
+  <line x1="100" y1="32" x2="100" y2="140" stroke="currentColor" stroke-width="4"/>
+  <!-- Horizontal divider -->
+  <line x1="28" y1="86" x2="172" y2="86" stroke="currentColor" stroke-width="4"/>
+
   <!-- Top-left person -->
-  <circle cx="46" cy="32" r="16"/>
-  <path d="M16,72 Q16,48 46,48 Q76,48 76,72 Z"/>
+  <circle cx="64" cy="52" r="10"/>
+  <path d="M44,78 Q44,62 64,62 Q84,62 84,78 Z"/>
 
   <!-- Top-right person -->
-  <circle cx="154" cy="32" r="16"/>
-  <path d="M124,72 Q124,48 154,48 Q184,48 184,72 Z"/>
+  <circle cx="136" cy="52" r="10"/>
+  <path d="M116,78 Q116,62 136,62 Q156,62 156,78 Z"/>
 
   <!-- Bottom-left person -->
-  <circle cx="46" cy="132" r="16"/>
-  <path d="M16,172 Q16,148 46,148 Q76,148 76,172 Z"/>
+  <circle cx="64" cy="106" r="10"/>
+  <path d="M44,132 Q44,116 64,116 Q84,116 84,132 Z"/>
 
   <!-- Bottom-right person -->
-  <circle cx="154" cy="132" r="16"/>
-  <path d="M124,172 Q124,148 154,148 Q184,148 184,172 Z"/>
+  <circle cx="136" cy="106" r="10"/>
+  <path d="M116,132 Q116,116 136,116 Q156,116 156,132 Z"/>
 
-  <!-- Center document -->
-  <path d="M76,52 L76,148 L124,148 L124,68 L108,52 Z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>
-  <path d="M108,52 L108,68 L124,68" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>
-  <line x1="88" y1="82" x2="112" y2="82" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-  <line x1="88" y1="96" x2="112" y2="96" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-  <line x1="88" y1="110" x2="112" y2="110" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+  <!-- Bottom bar -->
+  <line x1="80" y1="148" x2="120" y2="148" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
 
   <!-- Quorum text -->
-  <text x="100" y="226" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="40" font-weight="400" letter-spacing="-0.5">Quorum</text>
+  <text x="100" y="228" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="38" font-weight="600">Quorum</text>
 </svg>
