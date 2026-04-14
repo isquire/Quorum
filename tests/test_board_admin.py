@@ -112,15 +112,15 @@ def test_add_member_success(client, admin, make_user, board_of_deacons):
     resp = client.post(
         f"/boards/{board_of_deacons.slug}/members/add",
         data={
-            "user_id": new_user.id,
-            "role_on_board": "deacon",
-            "is_voting": "y",
-            "submit": "Save",
+            "selected_users": str(new_user.id),
+            f"role_{new_user.id}": "deacon",
+            f"voting_{new_user.id}": "on",
+            "submit": "Add selected members",
         },
         follow_redirects=True,
     )
     assert resp.status_code == 200
-    assert b"Added New Deacon" in resp.data
+    assert b"New Deacon" in resp.data
 
     bm = BoardMembership.query.filter_by(
         board_id=board_of_deacons.id, user_id=new_user.id
@@ -140,10 +140,10 @@ def test_add_member_logs_admin_action(client, admin, make_user, board_of_deacons
     client.post(
         f"/boards/{board_of_deacons.slug}/members/add",
         data={
-            "user_id": new_user.id,
-            "role_on_board": "trustee",
-            "is_voting": "y",
-            "submit": "Save",
+            "selected_users": str(new_user.id),
+            f"role_{new_user.id}": "trustee",
+            f"voting_{new_user.id}": "on",
+            "submit": "Add selected members",
         },
     )
     action = AdminAction.query.filter_by(action="add_board_member").first()

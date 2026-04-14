@@ -26,6 +26,11 @@ TERM_END_STATUS_CHOICES = [
 ]
 
 
+class BulkAddMembersForm(FlaskForm):
+    """CSRF-only form; actual member rows come from request.form."""
+    submit = SubmitField("Add selected members")
+
+
 class BoardMembershipForm(FlaskForm):
     user_id = SelectField(
         "Member",

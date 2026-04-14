@@ -1,21 +1,108 @@
 {% extends "base.html" %}
-{% from "_macros.html" import render_field %}
-{% block title %}Add member — {{ board.display_name }}{% endblock %}
+{% block title %}Add members — {{ board.display_name }}{% endblock %}
 {% block content %}
-<h1 class="h3 mb-4">Add member &mdash; {{ board.display_name }}</h1>
-
-<div class="card shadow-sm" style="max-width: 600px;">
-  <div class="card-body">
-    <form method="post">
-      {{ form.hidden_tag() }}
-      {{ render_field(form.user_id) }}
-      {{ render_field(form.role_on_board) }}
-      {{ render_field(form.is_voting) }}
-      <div class="d-flex gap-2">
-        {{ form.submit(class="btn btn-primary") }}
-        <a class="btn btn-outline-secondary" href="{{ url_for('boards.board_detail', slug=board.slug) }}">Cancel</a>
-      </div>
-    </form>
-  </div>
+<div class="d-flex align-items-center gap-3 mb-4">
+  <h1 class="h3 mb-0">Add members &mdash; {{ board.display_name }}</h1>
 </div>
+
+{% if not available_users %}
+<div class="alert alert-info">All active users are already members of this board.</div>
+<a class="btn btn-outline-secondary" href="{{ url_for('boards.board_detail', slug=board.slug) }}">Back to board</a>
+{% else %}
+<form method="post" id="bulkAddForm">
+  {{ form.hidden_tag() }}
+
+  <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAll">Select all</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAll">Deselect all</button>
+    <span class="text-muted small ms-2">
+      <span id="selectedCount">0</span> of {{ available_users | length }} selected
+    </span>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 2.5rem;"></th>
+            <th>Name</th>
+            <th style="width: 15rem;">Role on board</th>
+            <th style="width: 6rem;" class="text-center">Voting</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in available_users %}
+          <tr class="user-row" style="cursor: pointer;">
+            <td>
+              <input class="form-check-input member-cb" type="checkbox"
+                     name="selected_users" value="{{ user.id }}"
+                     id="cb_{{ user.id }}">
+            </td>
+            <td>
+              <label class="mb-0 d-block" for="cb_{{ user.id }}" style="cursor: pointer;">
+                {{ user.full_name }}
+              </label>
+            </td>
+            <td>
+              <select name="role_{{ user.id }}" class="form-select form-select-sm">
+                {% for value, label in all_roles %}
+                <option value="{{ value }}"{% if value == 'member' %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td class="text-center">
+              <input class="form-check-input" type="checkbox"
+                     name="voting_{{ user.id }}" id="voting_{{ user.id }}" checked>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    {{ form.submit(class="btn btn-primary") }}
+    <a class="btn btn-outline-secondary" href="{{ url_for('boards.board_detail', slug=board.slug) }}">Cancel</a>
+  </div>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const checkboxes = Array.from(document.querySelectorAll('.member-cb'));
+  const countEl = document.getElementById('selectedCount');
+
+  function updateCount() {
+    countEl.textContent = checkboxes.filter(cb => cb.checked).length;
+  }
+
+  checkboxes.forEach(cb => cb.addEventListener('change', updateCount));
+
+  document.getElementById('selectAll').addEventListener('click', function () {
+    checkboxes.forEach(cb => { cb.checked = true; });
+    updateCount();
+  });
+
+  document.getElementById('deselectAll').addEventListener('click', function () {
+    checkboxes.forEach(cb => { cb.checked = false; });
+    updateCount();
+  });
+
+  // Clicking anywhere on the row toggles the checkbox (except select/voting inputs).
+  document.querySelectorAll('.user-row').forEach(function (row) {
+    row.addEventListener('click', function (e) {
+      var tag = e.target.tagName;
+      if (tag === 'SELECT' || tag === 'OPTION' || e.target.classList.contains('form-check-input')) return;
+      if (tag === 'LABEL') return; // label already toggles via for= attribute
+      var cb = row.querySelector('.member-cb');
+      cb.checked = !cb.checked;
+      updateCount();
+    });
+  });
+})();
+</script>
 {% endblock %}
