@@ -28,7 +28,9 @@ from ..models import (
 from ..permissions import admin_required
 from . import bp
 from .forms import (
+    ALL_BOARD_ROLES,
     BoardMembershipForm,
+    BulkAddMembersForm,
     EditMembershipForm,
     EditTermForm,
     EndTermForm,
@@ -290,7 +292,7 @@ def end_term(term_id: int):
 @admin_required
 def add_member(slug: str):
     board = Board.query.filter_by(slug=slug).first_or_404()
-    form = BoardMembershipForm()
+    form = BulkAddMembersForm()
 
     # Only show active users not already on this board.
     existing_user_ids = {
@@ -303,31 +305,63 @@ def add_member(slug: str):
         .order_by(User.full_name)
         .all()
     )
-    form.user_id.choices = [(u.id, u.full_name) for u in available_users]
 
     if form.validate_on_submit():
-        membership = BoardMembership(
-            board_id=board.id,
-            user_id=form.user_id.data,
-            role_on_board=BoardRole(form.role_on_board.data),
-            is_voting=form.is_voting.data,
-        )
-        db.session.add(membership)
-        db.session.flush()
-        user = db.session.get(User, form.user_id.data)
-        log_admin_action(
-            current_user.id, "add_board_member", "board_membership", membership.id,
-            f"Added {user.full_name} to {board.display_name} as "
-            f"{form.role_on_board.data.replace('_', ' ')}.",
-        )
+        selected_ids = request.form.getlist("selected_users")
+        available_id_set = {u.id for u in available_users}
+        added_names: list[str] = []
+
+        for uid_str in selected_ids:
+            try:
+                user_id = int(uid_str)
+            except ValueError:
+                continue
+            # Reject users already on the board or not in the available set.
+            if user_id not in available_id_set:
+                continue
+            user = db.session.get(User, user_id)
+            if not user or not user.is_active:
+                continue
+
+            role_val = request.form.get(f"role_{user_id}", "member")
+            try:
+                role = BoardRole(role_val)
+            except ValueError:
+                role = BoardRole.member
+            is_voting = request.form.get(f"voting_{user_id}") == "on"
+
+            membership = BoardMembership(
+                board_id=board.id,
+                user_id=user_id,
+                role_on_board=role,
+                is_voting=is_voting,
+            )
+            db.session.add(membership)
+            db.session.flush()
+            log_admin_action(
+                current_user.id, "add_board_member", "board_membership", membership.id,
+                f"Added {user.full_name} to {board.display_name} as "
+                f"{role.value.replace('_', ' ')}.",
+            )
+            added_names.append(user.full_name)
+
         db.session.commit()
-        flash(f"Added {user.full_name} to {board.display_name}.", "success")
+        if added_names:
+            flash(
+                f"Added {len(added_names)} member(s) to {board.display_name}: "
+                f"{', '.join(added_names)}.",
+                "success",
+            )
+        else:
+            flash("No members were selected.", "warning")
         return redirect(url_for("boards.board_detail", slug=slug))
 
     return render_template(
         "boards/add_member.html",
         board=board,
         form=form,
+        available_users=available_users,
+        all_roles=ALL_BOARD_ROLES,
     )
 
 
